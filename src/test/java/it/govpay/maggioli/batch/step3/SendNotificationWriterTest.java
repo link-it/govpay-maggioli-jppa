@@ -130,6 +130,8 @@ class SendNotificationWriterTest {
 
 	    	assertThat(!zipEnum.hasMoreElements());
 		}
+        afterReports[0].delete();
+        baseReportDir.delete();
     }
 
     private void setField(Object target, String fieldName, Object value) throws Exception {
