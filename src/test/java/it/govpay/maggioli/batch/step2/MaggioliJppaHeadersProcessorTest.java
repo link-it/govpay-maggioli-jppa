@@ -38,8 +38,8 @@ class MaggioliJppaHeadersProcessorTest {
 
     @Test
     @DisplayName("Should process domain with multiple notifies")
-    void testProcessWithMultipleFlows() throws Exception {
-        // Given: Domain with 3 flows
+    void testProcessWithMultipleNotifies() throws Exception {
+        // Given: Domain with 3 notifies
         String codDominio = "12345678901";
         Instant lastRtDate = Instant.parse("2025-01-27T10:00:00Z");
         DominioProcessingContext context = DominioProcessingContext.builder()
@@ -69,9 +69,9 @@ class MaggioliJppaHeadersProcessorTest {
     }
 
     @Test
-    @DisplayName("Should return null when no flows found")
-    void testProcessWithNoFlows() throws Exception {
-        // Given: Domain with no new flows
+    @DisplayName("Should return null when no notify found")
+    void testProcessWithNoNotifies() throws Exception {
+        // Given: Domain with no new notify
         DominioProcessingContext context = DominioProcessingContext.builder()
             .codDominio("12345678901")
             .lastRtDate(Instant.now())

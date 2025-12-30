@@ -51,7 +51,7 @@ class SendNotificationReaderTest {
     @Test
     @DisplayName("Should read all receipt for assigned domain")
     void testReadAllRptForDomain() throws Exception {
-        // Given: 10 flows for the domain
+        // Given: 10 receipts to be notify for the domain
         List<RPT> receipts = createRptList(10, TEST_COD_DOMINIO);
         when(rptRepository.findByNotificheOrderByDataMsgRicevuta(TEST_COD_DOMINIO))
             .thenReturn(receipts);
@@ -65,7 +65,7 @@ class SendNotificationReaderTest {
             results.add(rptTemp);
         }
 
-        // Then: Should read all 10 flows
+        // Then: Should read all 10 receipts
         assertThat(results).hasSize(10);
         verify(rptRepository).findByNotificheOrderByDataMsgRicevuta(TEST_COD_DOMINIO);
     }
@@ -88,7 +88,7 @@ class SendNotificationReaderTest {
     @Test
     @DisplayName("Should read receipts in correct order")
     void testReadInOrder() throws Exception {
-        // Given: Flows with sequential codes
+        // Given: receipts with sequential codes
         List<RPT> receipts = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
             RPT rptTemp = RPT.builder()
@@ -180,7 +180,7 @@ class SendNotificationReaderTest {
     @Test
     @DisplayName("Should handle large dataset for single domain")
     void testReadLargeDataset() throws Exception {
-        // Given: 100 flows for one domain
+        // Given: 100 receipts for one domain
         List<RPT> flussi = createRptList(100, TEST_COD_DOMINIO);
         when(rptRepository.findByNotificheOrderByDataMsgRicevuta(TEST_COD_DOMINIO))
             .thenReturn(flussi);
@@ -192,7 +192,7 @@ class SendNotificationReaderTest {
             count++;
         }
 
-        // Then: Should read all 100 flows
+        // Then: Should read all 100 receipts
         assertThat(count).isEqualTo(100);
     }
 
