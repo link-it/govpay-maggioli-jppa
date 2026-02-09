@@ -18,7 +18,9 @@ import org.springframework.web.client.RestClientException;
 import it.govpay.maggioli.batch.dto.DominioProcessingContext;
 import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch;
 import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch.NotificaHeader;
+import it.govpay.maggioli.batch.entity.JppaConfig;
 import it.govpay.maggioli.batch.entity.RPT;
+import it.govpay.maggioli.batch.repository.JppaConfigRepository;
 import it.govpay.maggioli.batch.repository.JppaNotificheRepository;
 import it.govpay.maggioli.batch.scheduler.MaggioliJppaBatchScheduler;
 import it.govpay.maggioli.batch.step2.MaggioliJppaHeadersProcessor;
@@ -39,6 +41,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -90,6 +93,8 @@ class GovpayMaggioliBatchRetryTests {
 	private SendNotificationWriter notificationWriter = mock(SendNotificationWriter.class);
 	@MockitoBean
 	private JppaNotificheRepository notificheRepository = mock(JppaNotificheRepository.class);
+	@MockitoBean
+	private JppaConfigRepository jppaConfigRepository = mock(JppaConfigRepository.class);
 
 	private RPT notificheReaderFun() {
 		// poll() rimuove e ritorna l'elemento dalla coda (o null se vuota)
@@ -107,6 +112,9 @@ class GovpayMaggioliBatchRetryTests {
 		Instant lastRtData = Instant.now();
 		// Mock JppaNotificheRepository per supportare il partitioning
 		when(notificheRepository.findDistinctCodDominio()).thenReturn(List.of(COD_DOMINIO_TEST));
+
+		// Mock JppaConfigRepository per fornire il connettore al DominioPartitioner
+		when(jppaConfigRepository.findByCodDominio(COD_DOMINIO_TEST)).thenReturn(Optional.of(JppaConfig.builder().codDominio(COD_DOMINIO_TEST).connettore(COD_CONNETTORE_TEST).build()));
 
 		when(cleanupNotifiche.execute(any(), any())).thenReturn(RepeatStatus.FINISHED);
 
@@ -212,11 +220,15 @@ class GovpayMaggioliBatchRetryTests {
 	void multiDomainPartitioning() throws Exception {
 		// Setup: 3 domini nel sistema
 		Mockito.reset(notificheRepository);
+		Mockito.reset(jppaConfigRepository);
 		Mockito.reset(headersReader);
 		Mockito.reset(headersProcessor);
 		Mockito.reset(notificationReader);
 		Mockito.reset(notificationProcessor);
 		when(notificheRepository.findDistinctCodDominio()).thenReturn(List.of(COD_DOMINIO_PART1, COD_DOMINIO_PART2, COD_DOMINIO_PART3));
+		when(jppaConfigRepository.findByCodDominio(COD_DOMINIO_PART1)).thenReturn(Optional.of(JppaConfig.builder().codDominio(COD_DOMINIO_PART1).connettore(COD_CONNETTORE_TEST).build()));
+		when(jppaConfigRepository.findByCodDominio(COD_DOMINIO_PART2)).thenReturn(Optional.of(JppaConfig.builder().codDominio(COD_DOMINIO_PART2).connettore(COD_CONNETTORE_TEST).build()));
+		when(jppaConfigRepository.findByCodDominio(COD_DOMINIO_PART3)).thenReturn(Optional.of(JppaConfig.builder().codDominio(COD_DOMINIO_PART3).connettore(COD_CONNETTORE_TEST).build()));
 
 		// Headers reader deve restituire 3 DominioProcessingContext (uno per ogni dominio)
 		Instant lastRtData = Instant.now();
@@ -274,10 +286,13 @@ class GovpayMaggioliBatchRetryTests {
 	void allPartitionsSucceed() throws Exception {
 		// Setup: 2 domini
 		Mockito.reset(notificheRepository);
+		Mockito.reset(jppaConfigRepository);
 		Mockito.reset(headersReader);
 		Mockito.reset(notificationReader);
 		Mockito.reset(notificationProcessor);
 		when(notificheRepository.findDistinctCodDominio()).thenReturn(List.of(COD_DOMINIO_PART1, COD_DOMINIO_PART2));
+		when(jppaConfigRepository.findByCodDominio(COD_DOMINIO_PART1)).thenReturn(Optional.of(JppaConfig.builder().codDominio(COD_DOMINIO_PART1).connettore(COD_CONNETTORE_TEST).build()));
+		when(jppaConfigRepository.findByCodDominio(COD_DOMINIO_PART2)).thenReturn(Optional.of(JppaConfig.builder().codDominio(COD_DOMINIO_PART2).connettore(COD_CONNETTORE_TEST).build()));
 
 		// Headers reader deve restituire 2 DominioProcessingContext
 		Instant lastRtData = Instant.now();

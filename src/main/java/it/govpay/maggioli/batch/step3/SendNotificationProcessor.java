@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Instant;
 import java.util.List;
 
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 
@@ -20,13 +22,19 @@ import it.govpay.maggioli.client.model.RispostaNotificaPagamentoDto;
  * Processor to send notifica via Maggioli API
  */
 @Component
+@StepScope
 @Slf4j
 public class SendNotificationProcessor implements ItemProcessor<RPT, SendNotificationProcessor.NotificationCompleteData> {
 
     private final NotificheApiService notificheApiService;
+    private final String codConnettore;
 
-    public SendNotificationProcessor(NotificheApiService notificheApiService) {
+    public SendNotificationProcessor(
+        NotificheApiService notificheApiService,
+        @Value("#{stepExecutionContext['codConnettore']}") String codConnettore
+    ) {
         this.notificheApiService = notificheApiService;
+        this.codConnettore = codConnettore;
     }
 
     private String msgListAsString(List<String> msgList) {
@@ -37,11 +45,11 @@ public class SendNotificationProcessor implements ItemProcessor<RPT, SendNotific
 
     @Override
     public NotificationCompleteData process(RPT rpt) throws Exception {
-        log.info("Processing RPT: ec={}, iuv={}, idRicevuta={}", rpt.getCodDominio(), rpt.getIuv(), rpt.getCcp());
+        log.info("Processing RPT: ec={}, iuv={}, idRicevuta={}, connettore={}", rpt.getCodDominio(), rpt.getIuv(), rpt.getCcp(), codConnettore);
 
         try {
             // Send notification
-        	RispostaNotificaPagamentoDto clientResp = notificheApiService.notificaPagamento(rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
+        	RispostaNotificaPagamentoDto clientResp = notificheApiService.notificaPagamento(codConnettore, rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
 
             return NotificationCompleteData.builder()
                 .codDominio(rpt.getCodDominio())

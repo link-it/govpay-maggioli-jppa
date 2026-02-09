@@ -27,6 +27,8 @@ import it.govpay.maggioli.client.model.RispostaNotificaPagamentoDto.EsitoEnum;
 @DisplayName("SendNotificationProcessor Tests")
 class SendNotificationProcessorTest {
 
+    private static final String COD_CONNETTORE = "CONN_TEST";
+
     @Mock
     private NotificheApiService notificheApiService;
 
@@ -35,7 +37,7 @@ class SendNotificationProcessorTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        processor = new SendNotificationProcessor(notificheApiService);
+        processor = new SendNotificationProcessor(notificheApiService, COD_CONNETTORE);
     }
 
     private RPT createRPT() {
@@ -65,7 +67,7 @@ class SendNotificationProcessorTest {
     	RPT rpt = createRPT();
     	RispostaNotificaPagamentoDto response = createRispostaNotificaPagamento();
 
-        when(notificheApiService.notificaPagamento(anyString(), any(), any())).thenReturn(response);
+        when(notificheApiService.notificaPagamento(anyString(), anyString(), any(), any())).thenReturn(response);
 
         NotificationCompleteData result = processor.process(rpt);
 
@@ -73,7 +75,7 @@ class SendNotificationProcessorTest {
         assertEquals("12345678901", result.getCodDominio());
         assertEquals(rpt.getDataMsgRicevuta(), result.getDataMsgRicevuta());
 
-        verify(notificheApiService).notificaPagamento(rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
+        verify(notificheApiService).notificaPagamento(COD_CONNETTORE, rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
     }
 
     @Test
@@ -81,11 +83,11 @@ class SendNotificationProcessorTest {
     void testProcessThrowsRestClientException() throws Exception {
         RPT rpt = createRPT();
 
-        when(notificheApiService.notificaPagamento(anyString(), any(), any()))
+        when(notificheApiService.notificaPagamento(anyString(), anyString(), any(), any()))
                                 .thenThrow(new RestClientException("API error"));
 
         assertThrows(RestClientException.class, () -> processor.process(rpt));
 
-        verify(notificheApiService).notificaPagamento(rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
+        verify(notificheApiService).notificaPagamento(COD_CONNETTORE, rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
     }
 }

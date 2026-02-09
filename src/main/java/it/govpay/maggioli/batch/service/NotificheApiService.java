@@ -6,9 +6,8 @@ import java.util.Set;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestTemplate;
 
-import it.govpay.maggioli.batch.config.BatchProperties;
+import it.govpay.common.client.service.ConnettoreService;
 import it.govpay.maggioli.batch.entity.SingoloVersamento;
 import it.govpay.maggioli.batch.utils.SendingUtils;
 import it.govpay.maggioli.client.ApiClient;
@@ -24,21 +23,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NotificheApiService {
 
-    private final NotificheApi notificheApi;
+    private final ConnettoreService connettoreService;
 
-    public NotificheApiService(RestTemplate notificheApiRestTemplate, BatchProperties batchProperties) {
-        ApiClient apiClient = new ApiClient(notificheApiRestTemplate);
-        apiClient.setBasePath(batchProperties.getServiceUrl());
-        apiClient.setDebugging(batchProperties.isDebugging());
-        this.notificheApi = new NotificheApi(apiClient);
+    public NotificheApiService(ConnettoreService connettoreService) {
+        this.connettoreService = connettoreService;
     }
 
     /**
      * Send notifica ricevuto
      */
-    public RispostaNotificaPagamentoDto notificaPagamento(String codDominio, Set<SingoloVersamento> singoliVersamenti, byte[] xmlRt) throws RestClientException {
+    public RispostaNotificaPagamentoDto notificaPagamento(String codConnettore, String codDominio, Set<SingoloVersamento> singoliVersamenti, byte[] xmlRt) throws RestClientException {
         try {
-            log.debug("Chiamata API per l'invio della notifica di pagamento per il dominio {}", codDominio);
+            log.debug("Chiamata API per l'invio della notifica di pagamento per il dominio {} tramite connettore {}", codDominio, codConnettore);
+
+            ApiClient apiClient = new ApiClient(connettoreService.getRestTemplate(codConnettore));
+            apiClient.setBasePath(connettoreService.getConnettore(codConnettore).getUrl());
+            NotificheApi notificheApi = new NotificheApi(apiClient);
 
             RichiestaNotificaPagamentoV2Dto notificaPagamento = new RichiestaNotificaPagamentoV2Dto();
 			notificaPagamento.setDatiAccertamento(SendingUtils.buildDatiAccertamento(singoliVersamenti));

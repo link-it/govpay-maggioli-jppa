@@ -6,9 +6,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.7</version>
+        <groupId>org.gov4j.govpay</groupId>
+        <artifactId>govpay-bom</artifactId>
+        <version>1.1.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
@@ -21,20 +21,13 @@
     <description>Batch di notifiche pagamenti ai servizi Maggioli</description>
 
     <properties>
-        <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <openapi-generator.version>7.10.0</openapi-generator.version>
-        <hibernate.version>6.6.4.Final</hibernate.version>
 
         <!-- Code Coverage -->
         <jacoco.version>0.8.13</jacoco.version>
 
         <!-- OWASP Dependency Check -->
         <owasp.falsePositives.dir>src/main/resources/owasp/falsePositives</owasp.falsePositives.dir>
-        <owasp>verify</owasp> <!-- owasp phase, use 'none' for disable -->
-        <owasp.plugin.version>12.1.9</owasp.plugin.version>
         <owasp.plugin.autoUpdate>true</owasp.plugin.autoUpdate>
 	<owasp.plugin.failBuildOnCVSS>11</owasp.plugin.failBuildOnCVSS>
 	<owasp.ossindex.prevents429.sleep>5</owasp.ossindex.prevents429.sleep> <!-- https://github.com/sonatype/ossindex-maven/issues/17 -->
@@ -95,6 +88,19 @@
 		</profile>
 	</profiles>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Allinea tutti i moduli Spring Framework alla versione del BOM parent -->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-framework-bom</artifactId>
+                <version>${spring-framework.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- Spring Boot Starter for Batch -->
         <dependency>
@@ -123,7 +129,7 @@
 
         <!-- Hibernate JPA Metamodel Generator -->
         <dependency>
-            <groupId>org.hibernate</groupId>
+            <groupId>org.hibernate.orm</groupId>
             <artifactId>hibernate-jpamodelgen</artifactId>
             <version>${hibernate.version}</version>
             <scope>provided</scope>
@@ -192,6 +198,13 @@
             <artifactId>awaitility</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- GovPay Client Commons (ConnettoreService) -->
+        <dependency>
+            <groupId>org.gov4j.govpay</groupId>
+            <artifactId>govpay-common</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -212,7 +225,7 @@
                     <target>${java.version}</target>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>org.hibernate</groupId>
+                            <groupId>org.hibernate.orm</groupId>
                             <artifactId>hibernate-jpamodelgen</artifactId>
                             <version>${hibernate.version}</version>
                         </path>
@@ -228,6 +241,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <excludes>
                         <exclude>
@@ -304,11 +324,10 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>${owasp.plugin.version}</version>
                 <executions>
                     <execution>
                         <id>check-owasp</id>
-                        <phase>${owasp}</phase>
+                        <phase>${owasp.phase}</phase>
                         <configuration>
                             <autoUpdate>${owasp.plugin.autoUpdate}</autoUpdate>
                             <failBuildOnCVSS>${owasp.plugin.failBuildOnCVSS}</failBuildOnCVSS>
@@ -326,4 +345,17 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>central-snapshots</id>
+            <url>https://central.sonatype.com/repository/maven-snapshots</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
 </project>

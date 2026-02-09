@@ -38,16 +38,6 @@ public class BatchProperties {
     private boolean enabled = true;
 
     /**
-     * Maggioli JPPA service URL
-     */
-    private String serviceUrl = null;
-
-    /**
-     * Maggioli JPPA service debugging
-     */
-    private boolean debugging = true;
-
-    /**
      * Maggioli JPPA report directory
      */
     private String reportDir = "/tmp";
