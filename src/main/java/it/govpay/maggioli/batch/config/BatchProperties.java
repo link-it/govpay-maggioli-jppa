@@ -37,8 +37,4 @@ public class BatchProperties {
      */
     private boolean enabled = true;
 
-    /**
-     * Maggioli JPPA report directory
-     */
-    private String reportDir = "/tmp";
 }

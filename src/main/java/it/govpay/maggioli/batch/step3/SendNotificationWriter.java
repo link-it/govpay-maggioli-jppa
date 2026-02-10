@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
@@ -25,7 +26,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import it.govpay.maggioli.batch.config.BatchProperties;
+import it.govpay.common.client.service.ConnettoreService;
+import it.govpay.common.utils.ConnettoreMapUtils;
 import it.govpay.maggioli.batch.entity.JppaConfig;
 import it.govpay.maggioli.batch.repository.JppaConfigRepository;
 import it.govpay.maggioli.batch.utils.CSVUtils;
@@ -40,21 +42,28 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
 	private static final String PATTERN_DATA_DD_MM_YYYY_HH_MM_SS_SSS = "ddMMyyyyHHmmSSsss";
 	private static final String [] MAGGIOLI_JPPA_HEADER_FILE_CSV = {"idDominio","iuv","cpp","esito","warnings","errors"};
 
+	private static final String P_INVIA_TRACCIATO_ESITO = "INVIA_TRACCIATO_ESITO";
+	private static final String P_FILE_SYSTEM_PATH = "FILE_SYSTEM_PATH";
+
 	@Value("#{stepExecutionContext['codDominio']}")
     private String codDominio;
 
+	@Value("#{stepExecutionContext['codConnettore']}")
+    private String codConnettore;
+
 	private final JppaConfigRepository jppaConfigRepository;
-	private final BatchProperties batchProperties;
+	private final ConnettoreService connettoreService;
 	private final SimpleDateFormat sdf;
 	private final AtomicInteger progressivo = new AtomicInteger(0);
 	private final CSVUtils csvUtils = CSVUtils.getInstance(CSVFormat.DEFAULT);
 
 	private ZipOutputStream zos;
 	private Instant lastDataMsgRicevuta;
+	private boolean inviaTracciatoEsito;
 
-    public SendNotificationWriter(JppaConfigRepository jppaConfigRepository, BatchProperties batchProperties) {
+    public SendNotificationWriter(JppaConfigRepository jppaConfigRepository, ConnettoreService connettoreService) {
     	this.jppaConfigRepository = jppaConfigRepository;
-    	this.batchProperties = batchProperties;
+    	this.connettoreService = connettoreService;
 		this.sdf = new SimpleDateFormat(PATTERN_DATA_DD_MM_YYYY_HH_MM_SS_SSS);
 		this.sdf.setTimeZone(TimeZone.getTimeZone("Europe/Rome"));
 		this.sdf.setLenient(false);
@@ -72,10 +81,15 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
     @Transactional
     public void write(Chunk<? extends SendNotificationProcessor.NotificationCompleteData> chunk) throws IOException {
         for (SendNotificationProcessor.NotificationCompleteData data : chunk) {
+        	lastDataMsgRicevuta = maxData(data.getDataMsgRicevuta(), lastDataMsgRicevuta);
+
+        	if (!inviaTracciatoEsito) {
+        		continue;
+        	}
+
             log.info("Scrittura record CSV: Dominio={}, Iuv={}", data.getCodDominio(), data.getIuv());
 
             try {
-            	lastDataMsgRicevuta = maxData(data.getDataMsgRicevuta(), lastDataMsgRicevuta);
             	String[] csvData = new String[] {data.getCodDominio(), data.getIuv(), data.getCcp(), data.getEsito(), data.getWarnings(), data.getErrors()};
             	zos.write(csvUtils.toCsv(csvData).getBytes());
                 log.info("Aggiunto record CSV: Dominio={}, Iuv={}", data.getCodDominio(), data.getIuv());
@@ -88,15 +102,26 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
 
 	@Override
     public void beforeStep(StepExecution stepExecution) {
+		Map<String, String> connettoreProps = connettoreService.getConnettoreAsMap(codConnettore);
+		this.inviaTracciatoEsito = ConnettoreMapUtils.getBoolean(connettoreProps, P_INVIA_TRACCIATO_ESITO, false);
+
+		if (!inviaTracciatoEsito) {
+			log.info("Produzione tracciato di esito disabilitata per connettore {} dominio {}", codConnettore, codDominio);
+			return;
+		}
+
+		String fileSystemPath = ConnettoreMapUtils.getString(connettoreProps, P_FILE_SYSTEM_PATH, "/tmp");
+		log.info("Produzione tracciato di esito abilitata per connettore {} dominio {}, directory: {}", codConnettore, codDominio, fileSystemPath);
+
     	try {
 	    	String baseReportName = "GOVPAY_" + codDominio + "_" + sdf.format(new Date());
-	    	OutputStream oututStreamDestinazione = new FileOutputStream(new File(batchProperties.getReportDir(), baseReportName + "_" + progressivo.addAndGet(1) +".zip"));
+	    	OutputStream oututStreamDestinazione = new FileOutputStream(new File(fileSystemPath, baseReportName + "_" + progressivo.addAndGet(1) +".zip"));
 	    	this.zos = new ZipOutputStream(oututStreamDestinazione);
 	    	ZipEntry tracciatoOutputEntry = new ZipEntry(baseReportName + "_" + progressivo.addAndGet(1) +".csv");
 			zos.putNextEntry(tracciatoOutputEntry);
 
 			zos.write(csvUtils.toCsv(MAGGIOLI_JPPA_HEADER_FILE_CSV).getBytes());
-    	
+
 			log.debug("Zip report inizializzato per nuova esecuzione dello step");
     	} catch (IOException e) {
             log.error("Fail to initialize report zip: {}", e.getMessage());
@@ -108,8 +133,6 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
     @Override
     public ExitStatus afterStep(StepExecution stepExecution) {
     	try {
-	        log.debug("Chisura zip report per fine esecuzione dello step");
-
 	        if (lastDataMsgRicevuta != null) {
 		        // aggiorno ultima data ricevuta notificata
 		        JppaConfig jppaConfig = jppaConfigRepository.findByCodDominio(codDominio).orElse(null);
@@ -117,17 +140,20 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
 		        jppaConfigRepository.save(jppaConfig);
 	        }
 
-	        zos.flush();
-			zos.closeEntry();
-			zos.flush();
-			zos.close();
-			zos = null;
+	        if (zos != null) {
+		        log.debug("Chiusura zip report per fine esecuzione dello step");
+		        zos.flush();
+				zos.closeEntry();
+				zos.flush();
+				zos.close();
+				zos = null;
+	        }
     	} catch (IOException e) {
-            log.error("Fail to initialize report zip: {}", e.getMessage());
+            log.error("Fail to close report zip: {}", e.getMessage());
             log.error(e.getMessage(), e);
             throw new RuntimeException("Fail to complete step", e);
     	}
-        // Leava unchanged exit status
+        // Leave unchanged exit status
         return null;
     }
 }

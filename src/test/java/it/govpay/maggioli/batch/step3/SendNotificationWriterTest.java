@@ -28,7 +28,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.item.Chunk;
 
-import it.govpay.maggioli.batch.config.BatchProperties;
+import it.govpay.common.client.service.ConnettoreService;
 import it.govpay.maggioli.batch.entity.JppaConfig;
 import it.govpay.maggioli.batch.repository.JppaConfigRepository;
 import it.govpay.maggioli.batch.utils.CSVUtils;
@@ -43,10 +43,10 @@ class SendNotificationWriterTest {
     private JppaConfigRepository jppaConfigRepository;
 
     @Mock
-    private BatchProperties batchProperties;
+    private ConnettoreService connettoreService;
 
     private SendNotificationWriter writer;
-	
+
     private final CSVUtils csvUtils = CSVUtils.getInstance(CSVFormat.DEFAULT);
 
     private static final String TEST_COD_DOMINIO = "12345678901";
@@ -55,23 +55,30 @@ class SendNotificationWriterTest {
     private static final String TEST_IUV = "TEST_IUV";
     private static final Instant TEST_MSG_RICEVUTA = Instant.parse("2025-01-27T11:30:00Z");
     private static final String TEST_STEP_NAME = "maggioliSendNotificationWorkerStep";
+    private static final String TEST_REPORT_DIR = "/tmp/sendNotificationWriterTest";
 
     @BeforeEach
     void setUp() throws Exception {
-        writer = new SendNotificationWriter(jppaConfigRepository, batchProperties);
-        File testReportDir = new File("/tmp/", "sendNotificationWriterTest");
+        writer = new SendNotificationWriter(jppaConfigRepository, connettoreService);
+
+        File testReportDir = new File(TEST_REPORT_DIR);
         testReportDir.mkdir();
-        when(batchProperties.getReportDir()).thenReturn(testReportDir.getAbsolutePath());
+
+        when(connettoreService.getConnettoreAsMap(TEST_COD_CONNETTORE)).thenReturn(java.util.Map.of(
+            "INVIA_TRACCIATO_ESITO", "true",
+            "FILE_SYSTEM_PATH", TEST_REPORT_DIR
+        ));
 
         // Simula l'iniezione di @Value da ExecutionContext usando reflection
         setField(writer, "codDominio", TEST_COD_DOMINIO);
+        setField(writer, "codConnettore", TEST_COD_CONNETTORE);
     }
 
     @Test
     @DisplayName("Should write all complete data for domain")
     void testWriteAllCompleteData() throws Exception {
     	String baseReportName = "GOVPAY_" + TEST_COD_DOMINIO + "_";
-    	File baseReportDir = new File(batchProperties.getReportDir());
+    	File baseReportDir = new File(TEST_REPORT_DIR);
     	File[] beforeReports = baseReportDir.listFiles(f -> f.getName().startsWith(baseReportName));
     	for (File r : beforeReports) {
 			r.delete();
