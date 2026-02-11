@@ -1,0 +1,73 @@
+FROM eclipse-temurin:21-jre-alpine
+
+ARG govpay_maggioli_jppa_fullversion
+ARG govpay_maggioli_jppa_home=/opt/govpay-maggioli-jppa
+ARG govpay_maggioli_jppa_log=/var/log/govpay-maggioli-jppa
+
+LABEL maintainer="Link.it s.r.l."
+LABEL description="GovPay Maggioli JPPA (Notifiche Pagamenti) Batch Processor"
+LABEL govpay.maggioli.jppa.version="${govpay_maggioli_jppa_fullversion}"
+USER root
+
+ENV GOVPAY_MAGGIOLI_JPPA_FULLVERSION=${govpay_maggioli_jppa_fullversion} \
+GOVPAY_MAGGIOLI_JPPA_LOGDIR=${govpay_maggioli_jppa_log} \
+GOVPAY_MAGGIOLI_JPPA_HOME=${govpay_maggioli_jppa_home} \
+HSQLDB_FULLVERSION=2.7.4 \
+TZ=Europe/Rome
+
+
+RUN set -eux; \
+apk update; \
+apk upgrade; \
+apk add --no-cache bash curl tar unzip netcat-openbsd tzdata; \
+rm -rf /var/cache/apk/*; \
+echo "${TZ}" > /etc/timezone; \
+addgroup -S govpay ; \
+adduser -S -G govpay govpay; \
+mkdir -p ${GOVPAY_MAGGIOLI_JPPA_HOME} ${GOVPAY_MAGGIOLI_JPPA_LOGDIR} /opt/sql /opt/jdbc-drivers; \
+chown -R govpay:govpay ${GOVPAY_MAGGIOLI_JPPA_HOME} ${GOVPAY_MAGGIOLI_JPPA_LOGDIR} /opt/sql
+
+WORKDIR ${GOVPAY_MAGGIOLI_JPPA_HOME}
+
+# Download JAR from GitHub release
+RUN set -eux; \
+curl -kL -sS -q -o ${GOVPAY_MAGGIOLI_JPPA_HOME}/govpay-maggioli-jppa-batch.jar "https://github.com/link-it/govpay-maggioli-jppa/releases/download/${GOVPAY_MAGGIOLI_JPPA_FULLVERSION}/govpay-maggioli-jppa-batch-${GOVPAY_MAGGIOLI_JPPA_FULLVERSION}.jar";  \
+ls -la ${GOVPAY_MAGGIOLI_JPPA_HOME}/; \
+curl -fL -o /tmp/govpay-maggioli-jppa-batch.jar "https://github.com/link-it/govpay-maggioli-jppa/releases/download/${GOVPAY_MAGGIOLI_JPPA_FULLVERSION}/govpay-maggioli-jppa-batch-${GOVPAY_MAGGIOLI_JPPA_FULLVERSION}.jar"; \
+mv /tmp/govpay-maggioli-jppa-batch.jar ${GOVPAY_MAGGIOLI_JPPA_HOME}/govpay-maggioli-jppa-batch.jar; \
+chown govpay:govpay ${GOVPAY_MAGGIOLI_JPPA_HOME}/govpay-maggioli-jppa-batch.jar; \
+ls -la ${GOVPAY_MAGGIOLI_JPPA_HOME}/; \
+curl -kL -sS -q -o /tmp/sql.zip "https://github.com/link-it/govpay-maggioli-jppa/releases/download/${GOVPAY_MAGGIOLI_JPPA_FULLVERSION}/sql.zip"; \
+unzip -q /tmp/sql.zip -d /opt && rm /tmp/sql.zip; \
+chown -R govpay:govpay /opt/sql; \
+curl -kL -sS -q -o /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip https://sourceforge.net/projects/hsqldb/files/hsqldb/hsqldb_2_7/hsqldb-${HSQLDB_FULLVERSION}.zip/download; \
+unzip -q -d /opt /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/*; \
+rm -f  /var/tmp/hsqldb-${HSQLDB_FULLVERSION}.zip
+
+# Copy entrypoint and initialization scripts
+COPY commons/entrypoint.sh commons/init_maggioli_jppa_db.sh /usr/local/bin/
+RUN chown -R govpay:0 /usr/local/bin/entrypoint.sh /usr/local/bin/init_maggioli_jppa_db.sh ${GOVPAY_MAGGIOLI_JPPA_HOME} ${GOVPAY_MAGGIOLI_JPPA_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb /opt/sql \
+&& chmod -Rf g+rwX ${GOVPAY_MAGGIOLI_JPPA_HOME} ${GOVPAY_MAGGIOLI_JPPA_LOGDIR} /opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/ /opt/sql/ \
+&& chmod ug=rx /usr/local/bin/entrypoint.sh /usr/local/bin/init_maggioli_jppa_db.sh
+
+
+USER govpay
+
+ENV SPRING_BATCH_JOB_ENABLED=false \
+    GOVPAY_BATCH_ENABLED=true \
+    GOVPAY_BATCH_THREAD_POOL_SIZE=5 \
+    GOVPAY_BATCH_CHUNK_SIZE=100 \
+    GOVPAY_BATCH_MAX_RETRIES=5 \
+    MANAGEMENT_ENDPOINTS_WEB_BASE_PATH=/actuator \
+    SPRING_DATASOURCE_HIKARI_CONNECTION_TIMEOUT=20000 \
+    SPRING_DATASOURCE_HIKARI_IDLE_TIMEOUT=10000 \
+    SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=600000 \
+    SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2 \
+    SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=10 \
+    LOGGING_FILE_NAME=${govpay_maggioli_jppa_log}/govpay-maggioli-jppa.log \
+    LOGGING_DIRECTORYPATH=${govpay_maggioli_jppa_log} \
+    LOGGING_FILEPREFIX=govpay-maggioli-jppa
+
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD []

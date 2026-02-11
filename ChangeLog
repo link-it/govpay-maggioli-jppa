@@ -1,0 +1,92 @@
+2026-02-10  Luigi Buoncristiani
+
+	* [CI/CD]
+	Aggiunta pipeline GitHub Actions e Docker
+	Configurazione completa CI/CD con workflow Maven (build, release, docker):
+	- Build: compilazione, test, JaCoCo coverage, OWASP dependency-check, SonarCloud, analisi licenze
+	- Release: pubblicazione automatica su GitHub Releases al push di tag
+	- Docker: build e push immagine su Docker Hub (eclipse-temurin:21-jre-alpine)
+	Dockerfiles per build da GitHub release (Dockerfile.github) e da file locale (Dockerfile.daFile).
+	Script entrypoint.sh con configurazione database, cluster ID, modalita' CRON/scheduler.
+	Script init_maggioli_jppa_db.sh con liveness/readiness check e inizializzazione SQL.
+	Script build_image.sh per build locale immagine Docker.
+	Aggiunto sonar-project.properties e script di analisi licenze.
+
+2026-02-10  Luigi Buoncristiani
+
+	* [BatchCore]
+	Aggiunta funzionalita' #1 - Gestione tracciato di esito da proprieta' connettore
+	Le impostazioni per la produzione e il salvataggio del tracciato di esito
+	vengono ora lette dalle proprieta' del connettore configurato su GovPay:
+	- INVIA_TRACCIATO_ESITO: abilita/disabilita la produzione del tracciato CSV
+	- FILE_SYSTEM_PATH: directory di salvataggio del file ZIP
+	Rimossa la property applicativa 'govpay.batch.report-dir' (ora gestita dal connettore).
+
+2026-02-09  Luigi Buoncristiani
+
+	* [BatchCore]
+	Aggiunta funzionalita' #1 - Autenticazione Login API Maggioli
+	Aggiunta chiamata di login all'API Maggioli prima dell'invio delle notifiche.
+	Il metodo login utilizza l'endpoint POST /rest/login con:
+	- Credenziali HTTP Basic lette dal connettore (httpUser, httpPassw)
+	- UUID generato al momento della chiamata (idMessaggio)
+	- Identificativo del dominio (identificativoEnte)
+	Il token Bearer ottenuto dalla risposta viene impostato sull'ApiClient
+	per autenticare le successive chiamate API.
+
+2026-02-09  Luigi Buoncristiani
+
+	* [Build]
+	Impostato govpay-bom 1.1.0-SNAPSHOT come parent POM:
+	- Rimossi properties, plugin e configurazioni ridondanti (ereditati dal BOM)
+	- Aggiunto repository snapshot Sonatype Central per risoluzione parent in CI/CD
+	- Aggiunto import spring-framework-bom in dependencyManagement
+	- Aggiunto workaround JpaConfiguration per incompatibilita' Hibernate 6.6.x + JPA 3.2
+
+2026-02-09  Luigi Buoncristiani
+
+	* [BatchCore]
+	Aggiunta funzionalita' #1 - Integrazione govpay-common per gestione connettori
+	Integrata la libreria govpay-common (ConnettoreService) per la gestione
+	dei connettori verso il servizio REST Maggioli.
+	Le proprieta' del connettore (URL, autenticazione, SSL, timeout) vengono
+	lette dalla tabella 'connettori' del database tramite pattern EAV:
+	- NotificheApiService: crea ApiClient per-dominio usando ConnettoreService
+	- DominioPartitioner: passa codConnettore nell'ExecutionContext
+	- SendNotificationProcessor: inietta codConnettore da stepExecutionContext
+	Rimossa la configurazione statica da application.properties (serviceUrl, debugging).
+	Eliminata la classe NotificheApiClientConfig (RestTemplate ora creato da ConnettoreService).
+
+2025-12-30  Luigi Buoncristiani
+
+	* [Testing]
+	Aggiunta funzionalita' #1 - Test retry, skip e failure
+	Aggiunti test del job Spring Batch per verificare il comportamento in caso di:
+	- Retry automatico su errori temporanei (RestClientException)
+	- Skip di record problematici quando superato il limite di retry
+	- Failure del job quando superato il limite di skip
+	Configurati policy di retry con backoff esponenziale.
+
+2025-12-30  Luigi Buoncristiani
+
+	* [BatchCore]
+	Aggiunta funzionalita' #1 - Prima implementazione
+	Implementata prima versione del batch di notifica pagamenti a Maggioli JPPA:
+	- Step 1: Cleanup tabella JPPA_NOTIFICHE
+	- Step 2: Acquisizione headers ricevute da notificare per dominio
+	- Step 3: Invio notifiche a servizio REST Maggioli con partizionamento per dominio
+	Implementati componenti Spring Batch:
+	- Reader: MaggioliJppaHeadersReader, SendNotificationReader
+	- Processor: MaggioliJppaHeadersProcessor, SendNotificationProcessor
+	- Writer: MaggioliJppaHeadersWriter, SendNotificationWriter
+	Generazione tracciato di esito in formato ZIP/CSV per ogni dominio.
+	Configurazione completa con retry policy, skip policy e fault tolerance.
+	Integrazione OpenAPI Generator per generazione automatica del client REST
+	dalle specifiche Maggioli JPPA (maggioli-api.json).
+
+2025-11-28  Lorenzo Nardi <nardi@link.it>
+
+	* [ProjectSetup]
+	Creazione repository
+	Creato repository iniziale per il progetto govpay-maggioli-jppa-batch.
+	Configurazione base Spring Boot con Java 21.
