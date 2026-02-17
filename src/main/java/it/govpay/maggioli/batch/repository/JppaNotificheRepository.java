@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 import it.govpay.maggioli.batch.entity.JppaNotifiche;
 
 @Repository
-public interface JppaNotificheRepository extends JpaRepository<JppaNotifiche, String> {
+public interface JppaNotificheRepository extends JpaRepository<JppaNotifiche, Long> {
 
 	/**
      * Delete all records from JPPA_NOTIFICHE

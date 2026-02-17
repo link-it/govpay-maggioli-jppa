@@ -12,7 +12,7 @@ import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch;
 import it.govpay.maggioli.batch.entity.RPT;
 
 @Repository
-public interface RptRepository extends JpaRepository<RPT, String> {
+public interface RptRepository extends JpaRepository<RPT, Long> {
 	public interface InfoProjection {
 		Long getId();
 	}

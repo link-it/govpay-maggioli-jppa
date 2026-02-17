@@ -5,22 +5,28 @@ import java.util.Set;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * Entity representing a Receipt
+ * Entity representing a Versamento
  */
 @Entity
 @Table(name = "VERSAMENTI")
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Versamento {
 
     @Id
     @Column(name = "id")
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "id_applicazione", nullable = false)
@@ -30,5 +36,6 @@ public class Versamento {
     private String codVersamentoEnte;
 
     @OneToMany(mappedBy = "versamento")
+    @ToString.Exclude
     private Set<SingoloVersamento> singoliVersamenti;
 }

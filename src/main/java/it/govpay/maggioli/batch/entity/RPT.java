@@ -5,22 +5,28 @@ import java.time.Instant;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * Entity representing a Receipt
  */
 @Entity
-@Table(name = "RTP")
-@Data
+@Table(name = "RPT")
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class RPT {
 
     @Id
     @Column(name = "id")
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "cod_dominio", nullable = false, length = 35)
@@ -28,6 +34,7 @@ public class RPT {
 
     @ManyToOne()
     @JoinColumn(name = "id_versamento", nullable = false)
+    @ToString.Exclude
     private Versamento versamento;
 
     @Column(name = "stato", nullable = false, length = 35)
