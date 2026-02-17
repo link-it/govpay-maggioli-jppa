@@ -1,7 +1,7 @@
 package it.govpay.maggioli.batch.config;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -10,199 +10,94 @@ import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.test.util.ReflectionTestUtils;
 
+import it.govpay.common.batch.runner.JobExecutionHelper;
+import it.govpay.common.batch.runner.JobExecutionHelper.PreExecutionCheckResult;
+import it.govpay.common.batch.runner.JobExecutionHelper.PreExecutionResult;
 import it.govpay.maggioli.batch.Costanti;
 
 class ScheduledJobRunnerTest {
 
     @Mock
-    private JobLauncher jobLauncher;
-    @Mock
-    private PreventConcurrentJobLauncher preventConcurrentJobLauncher;
+    private JobExecutionHelper jobExecutionHelper;
     @Mock
     private Job maggioliJppaNotificationJob;
 
-    @Captor
-    private ArgumentCaptor<JobParameters> jobParametersCaptor;
-
     private ScheduledJobRunner runner;
 
-    private static final String JOB_NAME   = Costanti.MAGGIOLI_JPPA_NOTIFICATION_JOB_NAME;
-    private static final String CLUSTER_ID = "GovPay-Maggioli-JPPA-Batch";
+    private static final String JOB_NAME = Costanti.MAGGIOLI_JPPA_NOTIFICATION_JOB_NAME;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        // Creo il runner con i mock
-        runner = new ScheduledJobRunner(jobLauncher, preventConcurrentJobLauncher, maggioliJppaNotificationJob);
-        // Inietto il valore di clusterId (in produzione lo fa Spring via @Value)
-        ReflectionTestUtils.setField(runner, "clusterId", CLUSTER_ID);
-    }
-
-    private JobExecution mkExecutionWithCluster(String cluster) {
-        JobParameters params = new JobParametersBuilder()
-            .addString(Costanti.GOVPAY_BATCH_JOB_PARAMETER_CLUSTER_ID, cluster)
-            .toJobParameters();
-        return new JobExecution(1L, params);
+        runner = new ScheduledJobRunner(jobExecutionHelper, maggioliJppaNotificationJob);
     }
 
     @Test
     void whenJobRunningOnAnotherNode_thenSkipLaunching() throws Exception {
-        JobExecution runningExecution = mkExecutionWithCluster("OtherNode");
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(runningExecution);
-        when(preventConcurrentJobLauncher.isJobExecutionStale(runningExecution))
-            .thenReturn(false);
-        when(preventConcurrentJobLauncher.getClusterIdFromExecution(runningExecution))
-            .thenReturn("OtherNode");
+        when(jobExecutionHelper.checkBeforeExecution(JOB_NAME))
+            .thenReturn(new PreExecutionResult(PreExecutionCheckResult.RUNNING_ON_OTHER_NODE, null, "OtherNode"));
 
-        runner.runBatchMaggioliJppaNotificationJob();
+        JobExecution result = runner.runBatchMaggioliJppaNotificationJob();
 
-        verify(jobLauncher, never()).run(any(), any(JobParameters.class));
+        assertNull(result);
+        verify(jobExecutionHelper, never()).runJob(any(), any());
     }
 
     @Test
     void whenJobRunningOnSameNode_thenAlsoSkip() throws Exception {
-        JobExecution runningExecution = mkExecutionWithCluster(CLUSTER_ID);
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(runningExecution);
-        when(preventConcurrentJobLauncher.isJobExecutionStale(runningExecution))
-            .thenReturn(false);
-        when(preventConcurrentJobLauncher.getClusterIdFromExecution(runningExecution))
-            .thenReturn(CLUSTER_ID);
+        when(jobExecutionHelper.checkBeforeExecution(JOB_NAME))
+            .thenReturn(new PreExecutionResult(PreExecutionCheckResult.RUNNING_ON_THIS_NODE, null, "GovPay-Maggioli-JPPA-Batch"));
 
-        runner.runBatchMaggioliJppaNotificationJob();
+        JobExecution result = runner.runBatchMaggioliJppaNotificationJob();
 
-        verify(jobLauncher, never()).run(any(), any(JobParameters.class));
+        assertNull(result);
+        verify(jobExecutionHelper, never()).runJob(any(), any());
     }
 
     @Test
     void whenNoJobRunning_thenLaunchJob() throws Exception {
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(null);
+        when(jobExecutionHelper.checkBeforeExecution(JOB_NAME))
+            .thenReturn(new PreExecutionResult(PreExecutionCheckResult.CAN_PROCEED, null, null));
 
         JobExecution launched = new JobExecution(2L);
-        when(jobLauncher.run(eq(maggioliJppaNotificationJob), any(JobParameters.class)))
+        when(jobExecutionHelper.runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME)))
             .thenReturn(launched);
 
-        runner.runBatchMaggioliJppaNotificationJob();
+        JobExecution result = runner.runBatchMaggioliJppaNotificationJob();
 
-        verify(jobLauncher).run(eq(maggioliJppaNotificationJob), jobParametersCaptor.capture());
-
-        // Verifica che i parametri del job siano correttamente costruiti
-        JobParameters capturedParams = jobParametersCaptor.getValue();
-        assertNotNull(capturedParams);
-        assertEquals(JOB_NAME, capturedParams.getString(Costanti.GOVPAY_BATCH_JOB_ID));
-        assertEquals(CLUSTER_ID, capturedParams.getString(Costanti.GOVPAY_BATCH_JOB_PARAMETER_CLUSTER_ID));
-        assertNotNull(capturedParams.getString(Costanti.GOVPAY_BATCH_JOB_PARAMETER_WHEN));
+        assertNotNull(result);
+        verify(jobExecutionHelper).runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME));
     }
 
     @Test
     void whenJobIsStaleAndAbandonmentSucceeds_thenLaunchNewJob() throws Exception {
-        JobExecution staleExecution = mkExecutionWithCluster(CLUSTER_ID);
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(staleExecution);
-        when(preventConcurrentJobLauncher.isJobExecutionStale(staleExecution))
-            .thenReturn(true);
-        when(preventConcurrentJobLauncher.abandonStaleJobExecution(staleExecution))
-            .thenReturn(true);
+        when(jobExecutionHelper.checkBeforeExecution(JOB_NAME))
+            .thenReturn(new PreExecutionResult(PreExecutionCheckResult.STALE_ABANDONED_CAN_PROCEED, null, null));
 
         JobExecution launched = new JobExecution(2L);
-        when(jobLauncher.run(eq(maggioliJppaNotificationJob), any(JobParameters.class)))
+        when(jobExecutionHelper.runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME)))
             .thenReturn(launched);
 
-        runner.runBatchMaggioliJppaNotificationJob();
+        JobExecution result = runner.runBatchMaggioliJppaNotificationJob();
 
-        verify(preventConcurrentJobLauncher).abandonStaleJobExecution(staleExecution);
-        verify(jobLauncher).run(eq(maggioliJppaNotificationJob), jobParametersCaptor.capture());
-
-        // Verifica che i parametri del job siano correttamente costruiti
-        JobParameters capturedParams = jobParametersCaptor.getValue();
-        assertNotNull(capturedParams);
-        assertEquals(JOB_NAME, capturedParams.getString(Costanti.GOVPAY_BATCH_JOB_ID));
-        assertEquals(CLUSTER_ID, capturedParams.getString(Costanti.GOVPAY_BATCH_JOB_PARAMETER_CLUSTER_ID));
-        assertNotNull(capturedParams.getString(Costanti.GOVPAY_BATCH_JOB_PARAMETER_WHEN));
+        assertNotNull(result);
+        verify(jobExecutionHelper).runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME));
     }
 
     @Test
     void whenJobIsStaleAndAbandonmentFails_thenDoNotLaunchNewJob() throws Exception {
-        JobExecution staleExecution = mkExecutionWithCluster(CLUSTER_ID);
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(staleExecution);
-        when(preventConcurrentJobLauncher.isJobExecutionStale(staleExecution))
-            .thenReturn(true);
-        when(preventConcurrentJobLauncher.abandonStaleJobExecution(staleExecution))
-            .thenReturn(false);
+        when(jobExecutionHelper.checkBeforeExecution(JOB_NAME))
+            .thenReturn(new PreExecutionResult(PreExecutionCheckResult.STALE_ABANDON_FAILED, null, null));
 
-        runner.runBatchMaggioliJppaNotificationJob();
+        JobExecution result = runner.runBatchMaggioliJppaNotificationJob();
 
-        verify(preventConcurrentJobLauncher).abandonStaleJobExecution(staleExecution);
-        verify(jobLauncher, never()).run(any(), any(JobParameters.class));
-    }
-
-    @Test
-    void whenJobRunningWithNullClusterId_thenSkipLaunching() throws Exception {
-        JobExecution runningExecution = mkExecutionWithCluster(CLUSTER_ID);
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(runningExecution);
-        when(preventConcurrentJobLauncher.isJobExecutionStale(runningExecution))
-            .thenReturn(false);
-        when(preventConcurrentJobLauncher.getClusterIdFromExecution(runningExecution))
-            .thenReturn(null);
-
-        runner.runBatchMaggioliJppaNotificationJob();
-
-        verify(jobLauncher, never()).run(any(), any(JobParameters.class));
-    }
-
-    @Test
-    void whenStaleJobOnDifferentCluster_thenAbandonAndLaunchNew() throws Exception {
-        JobExecution staleExecution = mkExecutionWithCluster("OtherNode");
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(staleExecution);
-        when(preventConcurrentJobLauncher.isJobExecutionStale(staleExecution))
-            .thenReturn(true);
-        when(preventConcurrentJobLauncher.abandonStaleJobExecution(staleExecution))
-            .thenReturn(true);
-
-        JobExecution launched = new JobExecution(2L);
-        when(jobLauncher.run(eq(maggioliJppaNotificationJob), any(JobParameters.class)))
-            .thenReturn(launched);
-
-        runner.runBatchMaggioliJppaNotificationJob();
-
-        verify(preventConcurrentJobLauncher).abandonStaleJobExecution(staleExecution);
-        verify(jobLauncher).run(eq(maggioliJppaNotificationJob), jobParametersCaptor.capture());
-
-        // Verifica che i parametri del job siano correttamente costruiti
-        JobParameters capturedParams = jobParametersCaptor.getValue();
-        assertNotNull(capturedParams);
-        assertEquals(JOB_NAME, capturedParams.getString(Costanti.GOVPAY_BATCH_JOB_ID));
-    }
-
-    @Test
-    void whenStaleJobOnDifferentClusterAndAbandonmentFails_thenDoNotLaunch() throws Exception {
-        JobExecution staleExecution = mkExecutionWithCluster("OtherNode");
-        when(preventConcurrentJobLauncher.getCurrentRunningJobExecution(JOB_NAME))
-            .thenReturn(staleExecution);
-        when(preventConcurrentJobLauncher.isJobExecutionStale(staleExecution))
-            .thenReturn(true);
-        when(preventConcurrentJobLauncher.abandonStaleJobExecution(staleExecution))
-            .thenReturn(false);
-
-        runner.runBatchMaggioliJppaNotificationJob();
-
-        verify(preventConcurrentJobLauncher).abandonStaleJobExecution(staleExecution);
-        verify(jobLauncher, never()).run(any(), any(JobParameters.class));
+        assertNull(result);
+        verify(jobExecutionHelper, never()).runJob(any(), any());
     }
 }

@@ -12,6 +12,8 @@ import it.govpay.maggioli.batch.step3.SendNotificationProcessor;
 import it.govpay.maggioli.batch.step3.SendNotificationReader;
 import it.govpay.maggioli.batch.step3.SendNotificationWriter;
 import it.govpay.maggioli.batch.tasklet.CleanupJppaNotificheTasklet;
+import it.govpay.common.batch.runner.JobExecutionHelper;
+import it.govpay.common.batch.service.JobConcurrencyService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.text.MessageFormat;
@@ -20,7 +22,9 @@ import java.util.Map;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.explore.JobExplorer;
 import org.springframework.batch.core.job.builder.JobBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
@@ -76,6 +80,17 @@ public class BatchJobConfiguration {
         backOffPolicy.setMaxInterval(10000L);
         return backOffPolicy;
 	}
+
+    @Bean
+    public JobConcurrencyService jobConcurrencyService(JobExplorer jobExplorer) {
+        return new JobConcurrencyService(jobExplorer, jobRepository, batchProperties.getStaleThresholdMinutes());
+    }
+
+    @Bean
+    public JobExecutionHelper jobExecutionHelper(JobLauncher jobLauncher, JobConcurrencyService jobConcurrencyService) {
+        return new JobExecutionHelper(jobLauncher, jobConcurrencyService,
+            batchProperties.getClusterId(), batchProperties.getZoneId());
+    }
 
     /**
      * Main Maggioli JPPA Notification Job with 2 steps
