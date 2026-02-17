@@ -10,4 +10,12 @@ public class Costanti {
 
 	// Nome job Maggioli JPPA notification
 	public static final String MAGGIOLI_JPPA_NOTIFICATION_JOB_NAME = "maggioliJppaNotificationJob";
+
+	// GDE - Nomi operazioni
+	public static final String OPERATION_LOGIN = "loginUsingPOST";
+	public static final String OPERATION_NOTIFICA_PAGAMENTO = "postPagamentiV2UsingPOST";
+
+	// GDE - Path API
+	public static final String PATH_LOGIN = "/rest/login";
+	public static final String PATH_NOTIFICA_PAGAMENTO = "/rest/notifiche/v2/pagamenti";
 }

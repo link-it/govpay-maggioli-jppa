@@ -1,3 +1,24 @@
+2026-02-17  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [BatchCore]
+	Aggiunta funzionalita' #1 - Registrazione eventi GDE (Giornale degli Eventi)
+	Introdotto il tracking asincrono delle chiamate API verso Maggioli nel GDE,
+	seguendo il pattern gia' implementato in govpay-fdr-batch.
+	Le operazioni tracciate sono:
+	- Login (POST /rest/login): autenticazione e ottenimento token Bearer
+	- Notifica Pagamento (POST /rest/notifiche/v2/pagamenti): invio notifica
+	Per ciascuna operazione vengono registrati esito (OK/KO/FAIL), parametri
+	di richiesta e risposta, headers HTTP, payload e durata.
+	Nuovi componenti:
+	- WebConfig: ObjectMapper con serializzazione OffsetDateTime da govpay-common
+	- EventoMaggioliMapper: mapper per creazione eventi NuovoEvento
+	- GdeService: servizio GDE che estende AbstractGdeService (invio asincrono)
+	Classi riutilizzate da govpay-common: AbstractGdeService, GdeUtils,
+	ConfigurazioneService, AsyncClientConfiguration, OffsetDateTimeSerializer,
+	OffsetDateTimeDeserializer, DateTimePatterns, ComponenteEvento.API_MAGGIOLI_JPPA.
+	Modificato NotificheApiService per integrare le chiamate GDE con
+	loginUsingPOSTWithHttpInfo e timestamp start/end per ogni operazione.
+
 2026-02-10  Luigi Buoncristiani
 
 	* [CI/CD]
