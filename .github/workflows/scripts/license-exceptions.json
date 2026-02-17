@@ -1,0 +1,9 @@
+{
+  "exceptions": [
+    {
+      "groupId": "org.gov4j.govpay",
+      "artifactId": "govpay-common",
+      "reason": "Libreria interna del progetto GovPay, stesso licenziatario (Link.it s.r.l.), compatibile GPLv3"
+    }
+  ]
+}
