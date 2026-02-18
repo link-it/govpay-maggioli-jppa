@@ -42,36 +42,36 @@ class CSVUtilsTest {
     @DisplayName("isEmpty should return true for empty field")
     void testIsEmptyTrue() throws IOException {
         CSVUtils utils = CSVUtils.getInstance();
-        CSVRecord record = utils.getCSVRecord("a,,c");
+        CSVRecord csvRecord = utils.getCSVRecord("a,,c");
 
-        assertThat(utils.isEmpty(record, 1)).isTrue();
+        assertThat(utils.isEmpty(csvRecord, 1)).isTrue();
     }
 
     @Test
     @DisplayName("isEmpty should return false for non-empty field")
     void testIsEmptyFalse() throws IOException {
         CSVUtils utils = CSVUtils.getInstance();
-        CSVRecord record = utils.getCSVRecord("a,b,c");
+        CSVRecord csvRecord = utils.getCSVRecord("a,b,c");
 
-        assertThat(utils.isEmpty(record, 1)).isFalse();
+        assertThat(utils.isEmpty(csvRecord, 1)).isFalse();
     }
 
     @Test
     @DisplayName("isEmpty should return true for out-of-bounds position")
     void testIsEmptyOutOfBounds() throws IOException {
         CSVUtils utils = CSVUtils.getInstance();
-        CSVRecord record = utils.getCSVRecord("a,b");
+        CSVRecord csvRecord = utils.getCSVRecord("a,b");
 
-        assertThat(utils.isEmpty(record, 99)).isTrue();
+        assertThat(utils.isEmpty(csvRecord, 99)).isTrue();
     }
 
     @Test
     @DisplayName("toJsonValue with single non-empty field should return quoted value")
     void testToJsonValueSingleField() throws IOException {
         CSVUtils utils = CSVUtils.getInstance();
-        CSVRecord record = utils.getCSVRecord("hello,world");
+        CSVRecord csvRecord = utils.getCSVRecord("hello,world");
 
-        String result = utils.toJsonValue(record, 0);
+        String result = utils.toJsonValue(csvRecord, 0);
 
         assertThat(result).isEqualTo("\"hello\"");
     }
@@ -80,9 +80,9 @@ class CSVUtilsTest {
     @DisplayName("toJsonValue with multiple fields should return concatenated quoted value")
     void testToJsonValueMultipleFields() throws IOException {
         CSVUtils utils = CSVUtils.getInstance();
-        CSVRecord record = utils.getCSVRecord("hello,world");
+        CSVRecord csvRecord = utils.getCSVRecord("hello,world");
 
-        String result = utils.toJsonValue(record, 0, 1);
+        String result = utils.toJsonValue(csvRecord, 0, 1);
 
         assertThat(result).isEqualTo("\"hello world\"");
     }
@@ -91,9 +91,9 @@ class CSVUtilsTest {
     @DisplayName("toJsonValue with all empty fields should return null")
     void testToJsonValueAllEmpty() throws IOException {
         CSVUtils utils = CSVUtils.getInstance();
-        CSVRecord record = utils.getCSVRecord(",");
+        CSVRecord csvRecord = utils.getCSVRecord(",");
 
-        String result = utils.toJsonValue(record, 0, 1);
+        String result = utils.toJsonValue(csvRecord, 0, 1);
 
         assertThat(result).isEqualTo("null");
     }
