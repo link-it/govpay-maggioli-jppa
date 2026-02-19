@@ -47,6 +47,12 @@ public class BatchController extends AbstractBatchController {
         return Costanti.MAGGIOLI_JPPA_NOTIFICATION_JOB_NAME;
     }
 
+    @Override
+    protected ResponseEntity<String> clearCache() {
+        // Nessuna cache applicativa da invalidare
+        return ResponseEntity.ok("Nessuna cache da invalidare");
+    }
+
     @GetMapping("/eseguiJob")
     public ResponseEntity<Object> eseguiJobEndpoint(
             @RequestParam(name = "force", required = false, defaultValue = "false") boolean force) {

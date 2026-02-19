@@ -65,7 +65,12 @@ done
 rm -rf buildcontext
 mkdir -p buildcontext/
 cp -fr commons buildcontext/
-cp -fr ../src/main/resources/sql buildcontext/
+if [ -d ../src/main/resources/sql ]; then
+  cp -fr ../src/main/resources/sql buildcontext/
+else
+  mkdir -p buildcontext/sql
+  echo "WARN: directory ../src/main/resources/sql non trovata, creata vuota"
+fi
 
 DOCKERBUILD_OPT=()
 DOCKERBUILD_OPTS=(${DOCKERBUILD_OPTS[@]} '--build-arg' "govpay_maggioli_jppa_fullversion=${VER:-${LATEST_GOVPAY_MAGGIOLI_JPPA_RELEASE}}")
@@ -82,7 +87,7 @@ fi
 if [ -n "${LOCALFILE}" ]
 then
   DOCKERFILE="govpay-maggioli-jppa/Dockerfile.daFile"
-  cp -f "${LOCALFILE}" buildcontext/
+  cp -f "${LOCALFILE}" buildcontext/govpay-maggioli-jppa-batch.jar
 else
   DOCKERFILE="govpay-maggioli-jppa/Dockerfile.github"
 fi
