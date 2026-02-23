@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS JPPA_NOTIFICHE (
+    id_rpt BIGINT NOT NULL,
+    cod_dominio VARCHAR(35),
+    CONSTRAINT pk_jppa_notifiche PRIMARY KEY (id_rpt)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
