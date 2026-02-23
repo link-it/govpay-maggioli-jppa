@@ -71,7 +71,7 @@ public class GdeService extends AbstractGdeService {
     // ==================== Login ====================
 
     public void saveLoginOk(String codDominio, OffsetDateTime dataStart, OffsetDateTime dataEnd,
-                             ResponseEntity<?> responseEntity, String baseUrl) {
+                             ResponseEntity<?> responseEntity, String baseUrl, Object requestPayload) {
         String transactionId = UUID.randomUUID().toString();
         String url = GdeUtils.buildUrl(baseUrl, Costanti.PATH_LOGIN, null, null);
 
@@ -83,13 +83,15 @@ public class GdeService extends AbstractGdeService {
         eventoMaggioliMapper.setParametriRichiesta(nuovoEvento, url, "POST", GdeUtils.getCapturedRequestHeadersAsGdeHeaders());
         eventoMaggioliMapper.setParametriRisposta(nuovoEvento, dataEnd, responseEntity, null);
 
+        setRequestPayload(nuovoEvento, requestPayload);
         setResponsePayload(nuovoEvento, responseEntity, null);
 
         sendEventAsync(nuovoEvento);
     }
 
     public void saveLoginKo(String codDominio, OffsetDateTime dataStart, OffsetDateTime dataEnd,
-                             ResponseEntity<?> responseEntity, RestClientException exception, String baseUrl) {
+                             ResponseEntity<?> responseEntity, RestClientException exception, String baseUrl,
+                             Object requestPayload) {
         String transactionId = UUID.randomUUID().toString();
         String url = GdeUtils.buildUrl(baseUrl, Costanti.PATH_LOGIN, null, null);
 
@@ -102,6 +104,7 @@ public class GdeService extends AbstractGdeService {
         eventoMaggioliMapper.setParametriRichiesta(nuovoEvento, url, "POST", GdeUtils.getCapturedRequestHeadersAsGdeHeaders());
         eventoMaggioliMapper.setParametriRisposta(nuovoEvento, dataEnd, null, exception);
 
+        setRequestPayload(nuovoEvento, requestPayload);
         setResponsePayload(nuovoEvento, responseEntity, exception);
 
         sendEventAsync(nuovoEvento);
@@ -110,7 +113,7 @@ public class GdeService extends AbstractGdeService {
     // ==================== Notifica Pagamento ====================
 
     public void saveNotificaPagamentoOk(String codDominio, OffsetDateTime dataStart, OffsetDateTime dataEnd,
-                                         ResponseEntity<?> responseEntity, String baseUrl) {
+                                         ResponseEntity<?> responseEntity, String baseUrl, Object requestPayload) {
         String transactionId = UUID.randomUUID().toString();
         String url = GdeUtils.buildUrl(baseUrl, Costanti.PATH_NOTIFICA_PAGAMENTO, null, null);
 
@@ -122,6 +125,7 @@ public class GdeService extends AbstractGdeService {
         eventoMaggioliMapper.setParametriRichiesta(nuovoEvento, url, "POST", GdeUtils.getCapturedRequestHeadersAsGdeHeaders());
         eventoMaggioliMapper.setParametriRisposta(nuovoEvento, dataEnd, responseEntity, null);
 
+        setRequestPayload(nuovoEvento, requestPayload);
         setResponsePayload(nuovoEvento, responseEntity, null);
 
         sendEventAsync(nuovoEvento);
@@ -129,7 +133,7 @@ public class GdeService extends AbstractGdeService {
 
     public void saveNotificaPagamentoKo(String codDominio, OffsetDateTime dataStart, OffsetDateTime dataEnd,
                                          ResponseEntity<?> responseEntity, RestClientException exception,
-                                         String baseUrl) {
+                                         String baseUrl, Object requestPayload) {
         String transactionId = UUID.randomUUID().toString();
         String url = GdeUtils.buildUrl(baseUrl, Costanti.PATH_NOTIFICA_PAGAMENTO, null, null);
 
@@ -142,12 +146,20 @@ public class GdeService extends AbstractGdeService {
         eventoMaggioliMapper.setParametriRichiesta(nuovoEvento, url, "POST", GdeUtils.getCapturedRequestHeadersAsGdeHeaders());
         eventoMaggioliMapper.setParametriRisposta(nuovoEvento, dataEnd, null, exception);
 
+        setRequestPayload(nuovoEvento, requestPayload);
         setResponsePayload(nuovoEvento, responseEntity, exception);
 
         sendEventAsync(nuovoEvento);
     }
 
     // ==================== Utility ====================
+
+    private void setRequestPayload(NuovoEvento nuovoEvento, Object requestPayload) {
+        if (nuovoEvento.getParametriRichiesta() != null) {
+            nuovoEvento.getParametriRichiesta().setPayload(
+                extractRequestPayload(requestPayload));
+        }
+    }
 
     private void setResponsePayload(NuovoEvento nuovoEvento, ResponseEntity<?> responseEntity,
                                      RestClientException exception) {

@@ -30,6 +30,9 @@ public class SendingUtils {
 	}
 
 	private static List<DatoAccertamentoDto> contabilitaConverter(String contabilita, String descrVersamento) {
+		if (contabilita == null) {
+			return List.of();
+		}
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 	        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -55,6 +58,6 @@ public class SendingUtils {
 											 .flatMap(Collection::stream)
 											 .toList();
 		}
-		return null;
+		return List.of();
 	}
 }

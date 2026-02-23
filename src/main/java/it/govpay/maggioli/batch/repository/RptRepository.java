@@ -42,6 +42,6 @@ public interface RptRepository extends JpaRepository<RPT, Long> {
 	/**
      * Find all RTP con id in JPPA_NOTIFICHE per il dominio indicato
      */
-    @Query("SELECT r FROM RPT r, JppaNotifiche n WHERE n.idRpt = r.id AND r.codDominio = :codDominio ORDER BY r.dataMsgRicevuta")
+    @Query("SELECT r FROM RPT r JOIN FETCH r.versamento v LEFT JOIN FETCH v.singoliVersamenti, JppaNotifiche n WHERE n.idRpt = r.id AND r.codDominio = :codDominio ORDER BY r.dataMsgRicevuta")
     List<RPT> findByNotificheOrderByDataMsgRicevuta(@Param("codDominio") String codDominio);
 }

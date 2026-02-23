@@ -90,11 +90,11 @@ class SendingUtilsTest {
     }
 
     @Test
-    @DisplayName("buildDatiAccertamento with null input should return null")
+    @DisplayName("buildDatiAccertamento with null input should return empty list")
     void testBuildDatiAccertamentoWithNullInput() {
         List<DatoAccertamentoDto> result = SendingUtils.buildDatiAccertamento(null);
 
-        assertThat(result).isNull();
+        assertThat(result).isEmpty();
     }
 
     @Test

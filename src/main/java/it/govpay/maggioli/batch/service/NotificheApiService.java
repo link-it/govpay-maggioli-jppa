@@ -2,12 +2,16 @@ package it.govpay.maggioli.batch.service;
 
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import it.govpay.common.client.model.Connettore;
 import it.govpay.common.client.service.ConnettoreService;
@@ -56,9 +60,9 @@ public class NotificheApiService {
         ResponseEntity<JppaLoginResponse> responseLogin;
         try {
             responseLogin = autenticazioneApi.loginUsingPOSTWithHttpInfo(loginRequest);
-            gdeService.saveLoginOk(codDominio, startLogin, OffsetDateTime.now(), responseLogin, baseUrl);
+            gdeService.saveLoginOk(codDominio, startLogin, OffsetDateTime.now(), responseLogin, baseUrl, loginRequest);
         } catch (RestClientException e) {
-            gdeService.saveLoginKo(codDominio, startLogin, OffsetDateTime.now(), null, e, baseUrl);
+            gdeService.saveLoginKo(codDominio, startLogin, OffsetDateTime.now(), null, e, baseUrl, loginRequest);
             throw e;
         }
 
@@ -82,7 +86,14 @@ public class NotificheApiService {
             log.debug("Chiamata API per l'invio della notifica di pagamento per il dominio {} tramite connettore {}", codDominio, codConnettore);
 
             Connettore connettore = connettoreService.getConnettore(codConnettore);
-            ApiClient apiClient = new ApiClient(connettoreService.getRestTemplate(codConnettore));
+            RestTemplate restTemplate = connettoreService.getRestTemplate(codConnettore);
+
+            // Rimuove BasicAuthInterceptor: l'autenticazione Maggioli avviene via login JSON + Bearer token
+            List<ClientHttpRequestInterceptor> interceptors = restTemplate.getInterceptors().stream()
+                    .filter(i -> !i.getClass().getSimpleName().contains("BasicAuth")).toList();
+            restTemplate.setInterceptors(interceptors);
+
+			ApiClient apiClient = new ApiClient(restTemplate);
             apiClient.setBasePath(connettore.getUrl());
             String baseUrl = connettore.getUrl();
 
@@ -99,9 +110,9 @@ public class NotificheApiService {
             ResponseEntity<RispostaNotificaPagamentoDto> responseEntity;
             try {
                 responseEntity = notificheApi.postPagamentiV2UsingPOSTWithHttpInfo(notificaPagamento);
-                gdeService.saveNotificaPagamentoOk(codDominio, startNotifica, OffsetDateTime.now(), responseEntity, baseUrl);
+                gdeService.saveNotificaPagamentoOk(codDominio, startNotifica, OffsetDateTime.now(), responseEntity, baseUrl, notificaPagamento);
             } catch (RestClientException e) {
-                gdeService.saveNotificaPagamentoKo(codDominio, startNotifica, OffsetDateTime.now(), null, e, baseUrl);
+                gdeService.saveNotificaPagamentoKo(codDominio, startNotifica, OffsetDateTime.now(), null, e, baseUrl, notificaPagamento);
                 throw e;
             }
 

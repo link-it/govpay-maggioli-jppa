@@ -114,8 +114,12 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
 		log.info("Produzione tracciato di esito abilitata per connettore {} dominio {}, directory: {}", codConnettore, codDominio, fileSystemPath);
 
     	try {
+	    	File dir = new File(fileSystemPath);
+	    	if (!dir.exists()) {
+	    		dir.mkdirs();
+	    	}
 	    	String baseReportName = "GOVPAY_" + codDominio + "_" + sdf.format(new Date());
-	    	OutputStream oututStreamDestinazione = new FileOutputStream(new File(fileSystemPath, baseReportName + "_" + progressivo.addAndGet(1) +".zip"));
+	    	OutputStream oututStreamDestinazione = new FileOutputStream(new File(dir, baseReportName + "_" + progressivo.addAndGet(1) +".zip"));
 	    	this.zos = new ZipOutputStream(oututStreamDestinazione);
 	    	ZipEntry tracciatoOutputEntry = new ZipEntry(baseReportName + "_" + progressivo.addAndGet(1) +".csv");
 			zos.putNextEntry(tracciatoOutputEntry);

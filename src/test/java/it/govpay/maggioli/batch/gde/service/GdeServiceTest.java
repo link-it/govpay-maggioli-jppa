@@ -140,7 +140,8 @@ class GdeServiceTest {
                 .thenReturn(evento);
 
         ResponseEntity<String> responseEntity = ResponseEntity.ok("token");
-        gdeService.saveLoginOk(COD_DOMINIO, DATA_START, DATA_END, responseEntity, BASE_URL);
+        Object loginRequest = "loginPayload";
+        gdeService.saveLoginOk(COD_DOMINIO, DATA_START, DATA_END, responseEntity, BASE_URL, loginRequest);
 
         verify(eventoMaggioliMapper).createEventoOk(eq(COD_DOMINIO), eq("loginUsingPOST"), any(), eq(DATA_START), eq(DATA_END));
         verify(eventoMaggioliMapper).setParametriRichiesta(eq(evento), any(), eq("POST"), any());
@@ -164,7 +165,8 @@ class GdeServiceTest {
                 eq(DATA_START), eq(DATA_END), any(), eq(exception)))
                 .thenReturn(evento);
 
-        gdeService.saveLoginKo(COD_DOMINIO, DATA_START, DATA_END, null, exception, BASE_URL);
+        Object loginRequest = "loginPayload";
+        gdeService.saveLoginKo(COD_DOMINIO, DATA_START, DATA_END, null, exception, BASE_URL, loginRequest);
 
         verify(eventoMaggioliMapper).createEventoKo(eq(COD_DOMINIO), eq("loginUsingPOST"), any(),
                 eq(DATA_START), eq(DATA_END), eq(null), eq(exception));
@@ -188,7 +190,8 @@ class GdeServiceTest {
                 .thenReturn(evento);
 
         ResponseEntity<String> responseEntity = ResponseEntity.ok("ok");
-        gdeService.saveNotificaPagamentoOk(COD_DOMINIO, DATA_START, DATA_END, responseEntity, BASE_URL);
+        Object requestPayload = "notificaPayload";
+        gdeService.saveNotificaPagamentoOk(COD_DOMINIO, DATA_START, DATA_END, responseEntity, BASE_URL, requestPayload);
 
         verify(eventoMaggioliMapper).createEventoOk(eq(COD_DOMINIO), eq("postPagamentiV2UsingPOST"), any(),
                 eq(DATA_START), eq(DATA_END));
@@ -211,7 +214,8 @@ class GdeServiceTest {
                 eq(DATA_START), eq(DATA_END), any(), eq(exception)))
                 .thenReturn(evento);
 
-        gdeService.saveNotificaPagamentoKo(COD_DOMINIO, DATA_START, DATA_END, null, exception, BASE_URL);
+        Object requestPayload = "notificaPayload";
+        gdeService.saveNotificaPagamentoKo(COD_DOMINIO, DATA_START, DATA_END, null, exception, BASE_URL, requestPayload);
 
         verify(eventoMaggioliMapper).createEventoKo(eq(COD_DOMINIO), eq("postPagamentiV2UsingPOST"), any(),
                 eq(DATA_START), eq(DATA_END), eq(null), eq(exception));

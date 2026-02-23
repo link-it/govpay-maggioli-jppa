@@ -18,6 +18,7 @@ import it.govpay.common.batch.dto.BatchStatusInfo;
 import it.govpay.common.batch.dto.LastExecutionInfo;
 import it.govpay.common.batch.dto.NextExecutionInfo;
 import it.govpay.common.batch.runner.JobExecutionHelper;
+import it.govpay.common.client.service.ConnettoreService;
 import it.govpay.maggioli.batch.Costanti;
 
 @RestController
@@ -25,6 +26,7 @@ import it.govpay.maggioli.batch.Costanti;
 public class BatchController extends AbstractBatchController {
 
     private final Job maggioliJppaNotificationJob;
+    private final ConnettoreService connettoreService;
 
     public BatchController(
             JobExecutionHelper jobExecutionHelper,
@@ -32,9 +34,11 @@ public class BatchController extends AbstractBatchController {
             @Qualifier("maggioliJppaNotificationJob") Job maggioliJppaNotificationJob,
             Environment environment,
             ZoneId applicationZoneId,
-            @Value("${scheduler.maggioliJppaNotificationJob.fixedDelayString:600000}") long schedulerIntervalMillis) {
+            @Value("${scheduler.maggioliJppaNotificationJob.fixedDelayString:600000}") long schedulerIntervalMillis,
+            ConnettoreService connettoreService) {
         super(jobExecutionHelper, jobExplorer, environment, applicationZoneId, schedulerIntervalMillis);
         this.maggioliJppaNotificationJob = maggioliJppaNotificationJob;
+        this.connettoreService = connettoreService;
     }
 
     @Override
@@ -49,8 +53,8 @@ public class BatchController extends AbstractBatchController {
 
     @Override
     protected ResponseEntity<String> clearCache() {
-        // Nessuna cache applicativa da invalidare
-        return ResponseEntity.ok("Nessuna cache da invalidare");
+        connettoreService.clearCache();
+        return ResponseEntity.ok("Cache connettori invalidata");
     }
 
     @GetMapping("/run")
