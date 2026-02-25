@@ -14,7 +14,7 @@
 
     <groupId>it.govpay</groupId>
     <artifactId>govpay-maggioli-jppa-batch</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>GovPay Maggioli JPPA Batch</name>
