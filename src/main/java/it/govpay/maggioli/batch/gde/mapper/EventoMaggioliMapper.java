@@ -38,7 +38,7 @@ public class EventoMaggioliMapper {
         nuovoEvento.setCategoriaEvento(CategoriaEvento.INTERFACCIA);
         nuovoEvento.setClusterId(clusterId);
         nuovoEvento.setDataEvento(dataStart);
-        nuovoEvento.setDurataEvento(dataEnd.toEpochSecond() - dataStart.toEpochSecond());
+        nuovoEvento.setDurataEvento(dataEnd.toInstant().toEpochMilli() - dataStart.toInstant().toEpochMilli());
         nuovoEvento.setRuolo(RuoloEvento.CLIENT);
         nuovoEvento.setComponente(ComponenteEvento.API_MAGGIOLI_JPPA);
         nuovoEvento.setTipoEvento(tipoEvento);

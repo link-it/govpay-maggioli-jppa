@@ -1,3 +1,27 @@
+2026-02-25  Luigi Buoncristiani
+
+	* [Build]
+	Aggiornamento versioni dipendenze:
+	- govpay-bom aggiornato alla versione 1.1.2
+	- govpay-common aggiornato alla versione 1.0.0
+
+	* [BatchCore]
+	Correzioni e miglioramenti batch notifiche Maggioli JPPA:
+	- Rimosso header Authorization Basic dalla chiamata di login
+	  (l'autenticazione avviene via JSON body + Bearer token)
+	- Aggiunto salvataggio payload richiesta nel GDE per login e notifica pagamento
+	- Corretto calcolo durata evento GDE da secondi a millisecondi
+	- Corretta LazyInitializationException su Versamento.singoliVersamenti
+	  (aggiunto JOIN FETCH nella query findByNotificheOrderByDataMsgRicevuta)
+	- Gestione contabilita' null in SendingUtils.contabilitaConverter
+	- Creazione automatica directory tracciato di esito se mancante
+	- Aggiunto reset cache connettori nell'endpoint clearCache del BatchController
+
+	* [SQL]
+	Aggiunti script SQL per tabella JPPA_NOTIFICHE:
+	- Script di creazione, delete e drop per PostgreSQL, MySQL, Oracle,
+	  SQL Server e HSQLDB
+
 2026-02-17  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [BatchCore]

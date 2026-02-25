@@ -54,7 +54,7 @@ class EventoMaggioliMapperTest {
         assertThat(evento.getCategoriaEvento()).isEqualTo(CategoriaEvento.INTERFACCIA);
         assertThat(evento.getClusterId()).isEqualTo(CLUSTER_ID);
         assertThat(evento.getDataEvento()).isEqualTo(DATA_START);
-        assertThat(evento.getDurataEvento()).isEqualTo(5L);
+        assertThat(evento.getDurataEvento()).isEqualTo(5000L);
         assertThat(evento.getRuolo()).isEqualTo(RuoloEvento.CLIENT);
         assertThat(evento.getComponente()).isEqualTo(ComponenteEvento.API_MAGGIOLI_JPPA);
         assertThat(evento.getTipoEvento()).isEqualTo(TIPO_EVENTO);
