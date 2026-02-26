@@ -235,5 +235,5 @@ jobs:
         build-args: |
           govpay_maggioli_jppa_fullversion=${{ steps.version.outputs.VERSION }}
         tags: |
-          linkitaly/govpay-maggioli-jppa-batch:${{ steps.version.outputs.VERSION }}
-          linkitaly/govpay-maggioli-jppa-batch:latest
+          linkitaly/govpay-maggioli-jppa:${{ steps.version.outputs.VERSION }}
+          linkitaly/govpay-maggioli-jppa:latest

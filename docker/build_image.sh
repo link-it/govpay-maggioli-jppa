@@ -97,7 +97,7 @@ fi
 
 if [ -z "$TAG" ]
 then
-    REPO=${REGISTRY_PREFIX}/govpay-maggioli-jppa-batch
+    REPO=${REGISTRY_PREFIX}/govpay-maggioli-jppa
   TAGNAME=${VER:-${LATEST_GOVPAY_MAGGIOLI_JPPA_RELEASE}}
   TAG="${REPO}:${TAGNAME}"
 fi
