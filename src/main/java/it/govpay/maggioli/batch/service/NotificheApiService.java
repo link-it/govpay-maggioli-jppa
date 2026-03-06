@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import it.govpay.common.client.model.Connettore;
 import it.govpay.common.client.service.ConnettoreService;
 import it.govpay.maggioli.batch.entity.SingoloVersamento;
+import it.govpay.maggioli.batch.exception.LoginFailedException;
 import it.govpay.maggioli.batch.gde.service.GdeService;
 import it.govpay.maggioli.batch.utils.SendingUtils;
 import it.govpay.maggioli.client.ApiClient;
@@ -45,7 +46,7 @@ public class NotificheApiService {
     /**
      * Effettua il login sull'API Maggioli e imposta il token Bearer sull'ApiClient.
      */
-    private void login(ApiClient apiClient, Connettore connettore, String codDominio, String baseUrl) throws RestClientException {
+    private void login(ApiClient apiClient, Connettore connettore, String codDominio, String baseUrl) {
         JppaLoginRequest loginRequest = new JppaLoginRequest();
         loginRequest.setIdMessaggio(UUID.randomUUID().toString());
         loginRequest.setIdentificativoEnte(codDominio);
@@ -63,12 +64,12 @@ public class NotificheApiService {
             gdeService.saveLoginOk(codDominio, startLogin, OffsetDateTime.now(), responseLogin, baseUrl, loginRequest);
         } catch (RestClientException e) {
             gdeService.saveLoginKo(codDominio, startLogin, OffsetDateTime.now(), null, e, baseUrl, loginRequest);
-            throw e;
+            throw new LoginFailedException("Login fallito per dominio " + codDominio + ": " + e.getMessage(), e);
         }
 
         JppaLoginResponse loginResponse = responseLogin.getBody();
         if (loginResponse == null || loginResponse.getToken() == null) {
-            throw new RestClientException("Login fallito per dominio " + codDominio
+            throw new LoginFailedException("Login fallito per dominio " + codDominio
                     + ": " + (loginResponse != null ? loginResponse.getDescrizioneErrore() : "risposta vuota"));
         }
 
@@ -102,7 +103,9 @@ public class NotificheApiService {
             NotificheApi notificheApi = new NotificheApi(apiClient);
 
             RichiestaNotificaPagamentoV2Dto notificaPagamento = new RichiestaNotificaPagamentoV2Dto();
-			notificaPagamento.setDatiAccertamento(SendingUtils.buildDatiAccertamento(singoliVersamenti));
+			if (singoliVersamenti != null) {
+				notificaPagamento.setDatiAccertamento(SendingUtils.buildDatiAccertamento(singoliVersamenti));
+			}
         	notificaPagamento.setIdentificativoDominioEnteCreditore(codDominio);
         	notificaPagamento.setBase64Ricevuta(Base64.getEncoder().encodeToString(xmlRt));
 

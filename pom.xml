@@ -14,14 +14,14 @@
 
     <groupId>it.govpay</groupId>
     <artifactId>govpay-maggioli-jppa-batch</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>jar</packaging>
 
     <name>GovPay Maggioli JPPA Batch</name>
     <description>Batch di notifiche pagamenti ai servizi Maggioli</description>
 
     <properties>
-        <govpay-common.version>1.0.0</govpay-common.version>
+        <govpay-common.version>1.1.0</govpay-common.version>
         <openapi-generator.version>7.10.0</openapi-generator.version>
 
         <!-- Code Coverage -->
@@ -113,6 +113,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter Mail (richiesto per MailException e JavaMailSender) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
         <!-- Spring Boot Starter for Data JPA -->

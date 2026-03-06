@@ -12,8 +12,10 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 
+import it.govpay.maggioli.batch.Costanti;
 import it.govpay.maggioli.batch.entity.RPT;
 import it.govpay.maggioli.batch.service.NotificheApiService;
 import it.govpay.maggioli.client.model.RispostaNotificaPagamentoDto;
@@ -59,6 +61,18 @@ public class SendNotificationProcessor implements ItemProcessor<RPT, SendNotific
                 .esito(clientResp.getEsito().name())
                 .warnings(msgListAsString(clientResp.getWarningMessages()))
                 .errors(msgListAsString(clientResp.getErrorMessages()))
+                .build();
+
+        } catch (HttpClientErrorException.BadRequest e) {
+            // Errore 400: dati non validi, non ritentare, loggare e proseguire con esito errore
+            log.error("Errore HTTP 400 nell'invio della notifica ec={}, iuv={}, idRicevuta={}: {}", rpt.getCodDominio(), rpt.getIuv(), rpt.getCcp(), e.getMessage());
+            return NotificationCompleteData.builder()
+                .codDominio(rpt.getCodDominio())
+                .dataMsgRicevuta(rpt.getDataMsgRicevuta())
+                .iuv(rpt.getIuv())
+                .ccp(rpt.getCcp())
+                .esito(Costanti.ESITO_ERRORE_INVIO)
+                .errors(e.getStatusCode() + ": " + e.getMessage())
                 .build();
 
         } catch (RestClientException e) {
