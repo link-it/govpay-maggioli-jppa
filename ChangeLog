@@ -1,3 +1,17 @@
+2026-03-06  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [Build]
+	Driver JDBC rimossi dal fat jar - caricamento esterno a runtime:
+	- Scope dei driver JDBC (postgresql, h2, ojdbc11, mysql-connector-j, mssql-jdbc)
+	  cambiato da 'runtime' a 'provided'
+	- spring-boot-maven-plugin: aggiunto layout ZIP (abilita PropertiesLauncher)
+	  e aggiunto exclude esplicito per tutti i driver JDBC
+	- entrypoint.sh: aggiunto 'export LOADER_PATH="${GOVPAY_DS_JDBC_LIBS}"'
+	  prima dell'avvio JVM (default: /opt/jdbc-drivers)
+	- Aggiunta directory docker/jdbc-drivers con README e istruzioni download driver
+	- README.md: aggiunta sezione "Driver JDBC" con tabella driver, istruzioni
+	  esecuzione locale (-Dloader.path) e Docker (volume mount)
+
 2026-03-05  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [Build]
