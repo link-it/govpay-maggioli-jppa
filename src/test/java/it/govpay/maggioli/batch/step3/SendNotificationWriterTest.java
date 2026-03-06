@@ -277,6 +277,30 @@ class SendNotificationWriterTest {
     }
 
     @Test
+    @DisplayName("Con più destinatari, il primo va in To e gli altri in CC")
+    void testEmailPiuDestinatariToCc() throws Exception {
+        String email2 = "secondo@example.com";
+        String email3 = "terzo@example.com";
+        stubConnettore(Map.of(
+            "INVIA_TRACCIATO_ESITO", "true",
+            "FILE_SYSTEM_PATH", TEST_REPORT_DIR,
+            "EMAIL_INDIRIZZO", TEST_EMAIL + "," + email2 + "," + email3
+        ));
+        stubJppaConfig();
+        when(mailService.isAbilitato()).thenReturn(true);
+
+        StepExecution stepExecution = new StepExecution(TEST_STEP_NAME, null);
+        writer.beforeStep(stepExecution);
+        writer.write(new Chunk<>(List.of(buildCompleteData())));
+        writer.afterStep(stepExecution);
+
+        ArgumentCaptor<MailInfo> captor = ArgumentCaptor.forClass(MailInfo.class);
+        verify(mailService).inviaEmail(captor.capture());
+        assertEquals(List.of(TEST_EMAIL), captor.getValue().getTo());
+        assertEquals(List.of(email2, email3), captor.getValue().getCc());
+    }
+
+    @Test
     @DisplayName("Email non inviata se il servizio mail non è abilitato")
     void testEmailNonInviataSeServizioMailDisabilitato() throws Exception {
         stubConnettore(Map.of(

@@ -1,7 +1,5 @@
 package it.govpay.maggioli.batch.step3;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -18,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -41,6 +38,7 @@ import it.govpay.maggioli.batch.entity.JppaConfig;
 import it.govpay.maggioli.batch.repository.JppaConfigRepository;
 import it.govpay.maggioli.batch.service.MaggioliMailService;
 import it.govpay.maggioli.batch.utils.CSVUtils;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Writer to save report complete data
@@ -138,8 +136,7 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
 		String destinatariRaw = ConnettoreMapUtils.getString(connettoreProps, P_EMAIL_INDIRIZZO, "");
 		this.emailDestinatari = Arrays.stream(destinatariRaw.split(","))
 				.map(String::trim)
-				.filter(s -> !s.isEmpty())
-				.collect(Collectors.toList());
+				.filter(s -> !s.isEmpty()).toList();
 		this.emailOggetto = ConnettoreMapUtils.getString(connettoreProps, P_EMAIL_SUBJECT, null);
 		this.allegaZip = ConnettoreMapUtils.getBoolean(connettoreProps, P_EMAIL_ALLEGATO, false);
 
@@ -215,9 +212,13 @@ public class SendNotificationWriter implements ItemWriter<SendNotificationProces
 
     	try {
     		MailInfo.MailInfoBuilder builder = MailInfo.builder()
-    				.to(emailDestinatari)
+    				.to(List.of(emailDestinatari.get(0)))
     				.oggetto(buildMailOggetto())
     				.testo(buildMailBody());
+
+    		if (emailDestinatari.size() > 1) {
+    			builder.cc(emailDestinatari.subList(1, emailDestinatari.size()));
+    		}
 
     		if (allegaZip && zipFile != null && zipFile.exists()) {
     			byte[] zipBytes = Files.readAllBytes(zipFile.toPath());
