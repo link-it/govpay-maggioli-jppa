@@ -76,7 +76,7 @@ class SendingUtilsTest {
     }
 
     @Test
-    @DisplayName("buildDatiAccertamento with empty quote should return empty list")
+    @DisplayName("buildDatiAccertamento with empty quote should return null")
     void testBuildDatiAccertamentoWithEmptyQuote() {
         SingoloVersamento sv = SingoloVersamento.builder()
                 .id(1L)
@@ -86,15 +86,21 @@ class SendingUtilsTest {
 
         List<DatoAccertamentoDto> result = SendingUtils.buildDatiAccertamento(Set.of(sv));
 
-        assertThat(result).isEmpty();
+        assertThat(result).isNull();
     }
 
     @Test
-    @DisplayName("buildDatiAccertamento with null input should return empty list")
-    void testBuildDatiAccertamentoWithNullInput() {
-        List<DatoAccertamentoDto> result = SendingUtils.buildDatiAccertamento(null);
+    @DisplayName("buildDatiAccertamento with null contabilita should return null")
+    void testBuildDatiAccertamentoWithNullContabilita() {
+        SingoloVersamento sv = SingoloVersamento.builder()
+                .id(1L)
+                .descrizione("Pagamento")
+                .contabilita(null)
+                .build();
 
-        assertThat(result).isEmpty();
+        List<DatoAccertamentoDto> result = SendingUtils.buildDatiAccertamento(Set.of(sv));
+
+        assertThat(result).isNull();
     }
 
     @Test

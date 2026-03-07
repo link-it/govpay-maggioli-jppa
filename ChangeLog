@@ -1,3 +1,44 @@
+2026-03-06  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [Build]
+	Driver JDBC rimossi dal fat jar - caricamento esterno a runtime:
+	- Scope dei driver JDBC (postgresql, h2, ojdbc11, mysql-connector-j, mssql-jdbc)
+	  cambiato da 'runtime' a 'provided'
+	- spring-boot-maven-plugin: aggiunto layout ZIP (abilita PropertiesLauncher)
+	  e aggiunto exclude esplicito per tutti i driver JDBC
+	- entrypoint.sh: aggiunto 'export LOADER_PATH="${GOVPAY_DS_JDBC_LIBS}"'
+	  prima dell'avvio JVM (default: /opt/jdbc-drivers)
+	- Aggiunta directory docker/jdbc-drivers con README e istruzioni download driver
+	- README.md: aggiunta sezione "Driver JDBC" con tabella driver, istruzioni
+	  esecuzione locale (-Dloader.path) e Docker (volume mount)
+
+2026-03-05  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [Build]
+	Avanzamento versione progetto alla 1.0.1
+
+	* [Build]
+	Aggiornamento dipendenze:
+	- govpay-common aggiornato alla versione 1.1.0-SNAPSHOT
+	- Aggiunta dipendenza spring-boot-starter-mail
+
+	* [BatchCore]
+	Fix #4 - Gestione errore 500 quando viene inviato un array vuoto in datiAccertamento:
+	- setDatiAccertamento() chiamata solo quando la lista singoliVersamenti non e' nulla
+	- Aggiunta LoginFailedException come eccezione non ripetibile per evitare
+	  retry loop in caso di fallimento del login
+	- SendNotificationProcessor: lo skip avviene solo su HTTP 400 (BadRequest);
+	  gli altri errori 4xx propagano l'eccezione
+	- SendNotificationWriter: aggiunto invio email con tracciato CSV/ZIP al termine
+	  dello step, configurabile tramite proprieta' connettore:
+	    - INVIA_TRACCIATO_ESITO: abilita produzione tracciato e invio email
+	    - EMAIL_ALLEGATO: allega il file ZIP alla mail
+	    - EMAIL_INDIRIZZO: destinatari separati da virgola
+	    - EMAIL_SUBJECT: oggetto personalizzato (default: generato dinamicamente)
+	  Il corpo della mail include ente creditore, data ultima ricevuta e
+	  numero di pagamenti notificati.
+	  Introdotto MaggioliMailService che estende AbstractMailService di govpay-common.
+
 2026-02-25  Luigi Buoncristiani
 
 	* [Build]

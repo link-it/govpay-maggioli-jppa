@@ -41,6 +41,8 @@ import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.client.RestClientException;
 
+import it.govpay.maggioli.batch.exception.LoginFailedException;
+
 /**
  * Configuration for Maggioli JPPA Notification Batch Job
  */
@@ -67,6 +69,7 @@ public class BatchJobConfiguration {
         retryableExceptions.put(RestClientException.class, true);
         
         // Non ritentare su queste eccezioni
+        retryableExceptions.put(LoginFailedException.class, false);
         retryableExceptions.put(IllegalArgumentException.class, false);
         retryableExceptions.put(NullPointerException.class, false);
         

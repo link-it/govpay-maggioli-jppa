@@ -11,11 +11,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestClientException;
 
 import it.govpay.maggioli.batch.Costanti;
 import it.govpay.maggioli.batch.entity.RPT;
 import it.govpay.maggioli.batch.entity.Versamento;
+import it.govpay.maggioli.batch.exception.LoginFailedException;
 import it.govpay.maggioli.batch.service.NotificheApiService;
 import it.govpay.maggioli.batch.step3.SendNotificationProcessor.NotificationCompleteData;
 import it.govpay.maggioli.client.model.RispostaNotificaPagamentoDto;
@@ -79,14 +84,60 @@ class SendNotificationProcessorTest {
     }
 
     @Test
-    @DisplayName("Test processing throws RestClientException")
+    @DisplayName("Test processing throws RestClientException on 5xx")
     void testProcessThrowsRestClientException() throws Exception {
         RPT rpt = createRPT();
 
         when(notificheApiService.notificaPagamento(anyString(), anyString(), any(), any()))
-                                .thenThrow(new RestClientException("API error"));
+                                .thenThrow(new HttpServerErrorException(HttpStatus.INTERNAL_SERVER_ERROR, "Server error"));
 
         assertThrows(RestClientException.class, () -> processor.process(rpt));
+
+        verify(notificheApiService).notificaPagamento(COD_CONNETTORE, rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
+    }
+
+    @Test
+    @DisplayName("Test errore 400 Bad Request restituisce DTO con ERRORE_INVIO senza rilanciare")
+    void testProcess400BadRequestReturnsErrorDto() throws Exception {
+        RPT rpt = createRPT();
+
+        when(notificheApiService.notificaPagamento(anyString(), anyString(), any(), any()))
+                                .thenThrow(HttpClientErrorException.create(HttpStatus.BAD_REQUEST, "Bad Request", HttpHeaders.EMPTY, null, null));
+
+        NotificationCompleteData result = processor.process(rpt);
+
+        assertNotNull(result);
+        assertEquals(rpt.getCodDominio(), result.getCodDominio());
+        assertEquals(rpt.getIuv(), result.getIuv());
+        assertEquals(rpt.getCcp(), result.getCcp());
+        assertEquals(Costanti.ESITO_ERRORE_INVIO, result.getEsito());
+        assertNotNull(result.getErrors());
+
+        verify(notificheApiService).notificaPagamento(COD_CONNETTORE, rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
+    }
+
+    @Test
+    @DisplayName("Test errore 4xx diverso da 400 rilancia l'eccezione")
+    void testProcess4xxOtherThan400Throws() throws Exception {
+        RPT rpt = createRPT();
+
+        when(notificheApiService.notificaPagamento(anyString(), anyString(), any(), any()))
+                                .thenThrow(HttpClientErrorException.create(HttpStatus.NOT_FOUND, "Not Found", HttpHeaders.EMPTY, null, null));
+
+        assertThrows(HttpClientErrorException.class, () -> processor.process(rpt));
+
+        verify(notificheApiService).notificaPagamento(COD_CONNETTORE, rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
+    }
+
+    @Test
+    @DisplayName("Test LoginFailedException propagates without being caught")
+    void testProcessLoginFailedExceptionPropagates() throws Exception {
+        RPT rpt = createRPT();
+
+        when(notificheApiService.notificaPagamento(anyString(), anyString(), any(), any()))
+                                .thenThrow(new LoginFailedException("Login fallito"));
+
+        assertThrows(LoginFailedException.class, () -> processor.process(rpt));
 
         verify(notificheApiService).notificaPagamento(COD_CONNETTORE, rpt.getCodDominio(), rpt.getVersamento().getSingoliVersamenti(), rpt.getXmlRt());
     }

@@ -53,11 +53,10 @@ public class SendingUtils {
 	}
 
 	public static List<DatoAccertamentoDto> buildDatiAccertamento(Set<SingoloVersamento> singoliVersamenti) {
-		if (singoliVersamenti != null) {
-			return singoliVersamenti.stream().map(sv -> contabilitaConverter(sv.getContabilita(), sv.getDescrizione()))
-											 .flatMap(Collection::stream)
-											 .toList();
-		}
-		return List.of();
+		List<DatoAccertamentoDto> result = singoliVersamenti.stream()
+				.map(sv -> contabilitaConverter(sv.getContabilita(), sv.getDescrizione()))
+				.flatMap(Collection::stream)
+				.toList();
+		return result.isEmpty() ? null : result;
 	}
 }

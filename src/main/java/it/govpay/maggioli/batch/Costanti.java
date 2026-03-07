@@ -11,6 +11,16 @@ public class Costanti {
 	// Nome job Maggioli JPPA notification
 	public static final String MAGGIOLI_JPPA_NOTIFICATION_JOB_NAME = "maggioliJppaNotificationJob";
 
+	// Esiti notifica
+	public static final String ESITO_ERRORE_INVIO = "ERRORE_INVIO";
+
+	// Parametri connettore - email report
+	public static final String P_EMAIL_ALLEGATO = "EMAIL_ALLEGATO";
+	public static final String P_EMAIL_INDIRIZZO = "EMAIL_INDIRIZZO";
+	public static final String P_EMAIL_SUBJECT = "EMAIL_SUBJECT";
+	public static final String DEFAULT_EMAIL_OGGETTO = "Report notifiche pagamento JPPA";
+	public static final String DEFAULT_EMAIL_TESTO = "In allegato il report delle notifiche di pagamento.";
+
 	// GDE - Nomi operazioni
 	public static final String OPERATION_LOGIN = "loginUsingPOST";
 	public static final String OPERATION_NOTIFICA_PAGAMENTO = "postPagamentiV2UsingPOST";

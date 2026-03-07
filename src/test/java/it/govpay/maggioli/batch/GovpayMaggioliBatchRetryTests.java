@@ -15,6 +15,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClientException;
 
+import it.govpay.maggioli.batch.exception.LoginFailedException;
 import it.govpay.maggioli.batch.dto.DominioProcessingContext;
 import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch;
 import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch.NotificaHeader;
@@ -335,5 +336,59 @@ class GovpayMaggioliBatchRetryTests {
 		assertEquals(BatchStatus.COMPLETED, execution.getStatus());
 		// Entrambi i domini sono stati processati
 		assertEquals(2, notificationProcessorCounter.get());
+	}
+
+	/**
+	 * Test che verifica che una LoginFailedException causa il fallimento immediato del job
+	 * senza retry.
+	 */
+	@Test
+	void loginFailureCausesJobFailed() throws Exception {
+		Mockito.reset(notificationProcessor);
+
+		List<NotificaHeader> headers = List.of(NotificaHeader.builder().idRpt(ID_RPT_TEST).dataMsgRicevuta(RPT_MSG_DATA).build());
+		when(headersProcessor.process(any())).thenReturn( MaggioliHeadersBatch.builder()
+											 								  .codDominio(COD_DOMINIO_TEST)
+											 								  .headers(headers)
+											 								  .build() )
+											 .thenThrow( new RuntimeException("Failed headers processor") );
+
+		when(notificationProcessor.process(any())).thenThrow(new LoginFailedException("Login fallito per dominio " + COD_DOMINIO_TEST));
+
+		JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		assertEquals(BatchStatus.FAILED, execution.getStatus());
+	}
+
+	/**
+	 * Test che verifica che un errore 4xx (gestito dal processor come DTO errore)
+	 * non causa il fallimento del job: il processor restituisce un DTO con esito errore
+	 * e il job completa con successo.
+	 */
+	@Test
+	void httpClientError4xxCausesJobCompleted() throws Exception {
+		Mockito.reset(notificationProcessor);
+
+		List<NotificaHeader> headers = List.of(NotificaHeader.builder().idRpt(ID_RPT_TEST).dataMsgRicevuta(RPT_MSG_DATA).build());
+		when(headersProcessor.process(any())).thenReturn( MaggioliHeadersBatch.builder()
+											 								  .codDominio(COD_DOMINIO_TEST)
+											 								  .headers(headers)
+											 								  .build() )
+											 .thenThrow( new RuntimeException("Failed headers processor") );
+
+		// Simula il comportamento del processor quando riceve un 4xx:
+		// restituisce un DTO con esito ERRORE_INVIO senza rilanciare
+		SendNotificationProcessor.NotificationCompleteData errorData =
+				SendNotificationProcessor.NotificationCompleteData.builder()
+																  .codDominio(COD_DOMINIO_TEST)
+																  .ccp(CCP_TEST)
+																  .iuv(IUV_TEST)
+																  .dataMsgRicevuta(RPT_MSG_DATA)
+																  .esito(Costanti.ESITO_ERRORE_INVIO)
+																  .errors("400 BAD_REQUEST: Bad Request")
+																  .build();
+		when(notificationProcessor.process(any())).thenReturn(errorData);
+
+		JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		assertEquals(BatchStatus.COMPLETED, execution.getStatus());
 	}
 }
