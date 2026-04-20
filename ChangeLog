@@ -1,3 +1,18 @@
+2026-04-20  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [CI/CD]
+	Aggiunto job OSV Scan alla pipeline GitHub Actions:
+	- Integrato Google OSV Scanner (v2.3.5) come reusable workflow
+	- Scansione ricorsiva del progetto e del pom.xml
+	- Esecuzione su push a main, tag, o forzatura tramite variabile FORCE_OSV_JOB
+	- Blocco release in caso di vulnerabilita' trovate su main o tag
+
+	* [SQL]
+	Aggiunti script di svecchiamento tabelle Spring Batch:
+	- spring-batch-cleanup.sql per PostgreSQL, MySQL, Oracle, SQL Server e HSQLDB
+	- Eliminazione esecuzioni completate/fallite piu' vecchie di 90 giorni
+	- Cancellazioni nel rispetto delle foreign key
+
 2026-03-06  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [Build]
