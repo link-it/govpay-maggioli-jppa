@@ -1,3 +1,12 @@
+2026-04-23  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [CI/CD]
+	Riorganizzato job release per collezionare tutti i report in un unico ZIP:
+	- Report OWASP, JaCoCo, OSV SARIF e licenze assemblati in release-reports-<tag>.zip
+	- Aggiunto download report OSV Scanner SARIF nella release
+	- Release ora pubblica solo 3 asset: JAR versionato, sql.zip, release-reports ZIP
+	- Aggiornato download-artifact alla v7
+
 2026-04-21  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [Build]
