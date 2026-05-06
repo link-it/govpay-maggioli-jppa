@@ -1,3 +1,30 @@
+2026-05-06  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [CI/CD]
+	Fix step "Zip SQL files" del job release: aggiunto mkdir -p target
+	prima dello zip per evitare errore quando la directory non esiste
+	nel checkout pulito del job release.
+
+2026-05-05  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* Avanzamento versione 1.0.2
+
+	* [Build]
+	Aggiornamento dipendenze:
+	- govpay-bom aggiornato dalla 1.1.3-SNAPSHOT alla 1.1.3
+	- govpay-common aggiornato dalla 1.1.0 alla 1.1.2
+	- Implementato il nuovo metodo astratto getConfigurazioneComponente
+	  in GdeService per la risoluzione della configurazione GDE per
+	  componente (mappato su API_MAGGIOLI_JPPA e altri componenti standard).
+
+	* [CI/CD]
+	Aggiunto job SBOM CycloneDX alla pipeline:
+	- Generazione SBOM aggregato in formato JSON e XML (schema 1.6)
+	- Esecuzione su push a main, tag, o forzatura tramite FORCE_SBOM_JOB
+	- Disabilitabile con DISABLE_SBOM_JOB
+	- Artifact sbom-report incluso nello ZIP delle evidenze della release
+	  (reports/sbom/)
+
 2026-04-23  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [CI/CD]
