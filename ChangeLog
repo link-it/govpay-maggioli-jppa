@@ -1,3 +1,10 @@
+2026-05-06  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [CI/CD]
+	Fix step "Zip SQL files" del job release: aggiunto mkdir -p target
+	prima dello zip per evitare errore quando la directory non esiste
+	nel checkout pulito del job release.
+
 2026-05-05  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* Avanzamento versione 1.0.2
