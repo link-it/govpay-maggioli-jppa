@@ -26,8 +26,11 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import it.govpay.common.client.model.Connettore;
+import it.govpay.common.configurazione.model.GdeInterfaccia;
+import it.govpay.common.configurazione.model.Giornale;
 import it.govpay.common.configurazione.service.ConfigurazioneService;
 import it.govpay.common.gde.GdeEventInfo;
+import it.govpay.gde.client.beans.ComponenteEvento;
 import it.govpay.gde.client.beans.NuovoEvento;
 import it.govpay.maggioli.batch.gde.mapper.EventoMaggioliMapper;
 
@@ -196,6 +199,49 @@ class GdeServiceTest {
         verify(eventoMaggioliMapper).createEventoOk(eq(COD_DOMINIO), eq("postPagamentiV2UsingPOST"), any(),
                 eq(DATA_START), eq(DATA_END));
         verify(restTemplate).postForEntity(eq(GDE_BASE_URL + "/eventi"), eq(evento), eq(Void.class));
+    }
+
+    @Test
+    @DisplayName("getConfigurazioneComponente should return correct GdeInterfaccia for each ComponenteEvento")
+    void testGetConfigurazioneComponenteMapping() {
+        Giornale giornale = new Giornale();
+        GdeInterfaccia apiPagoPA = new GdeInterfaccia();
+        GdeInterfaccia apiEnte = new GdeInterfaccia();
+        GdeInterfaccia apiPagamento = new GdeInterfaccia();
+        GdeInterfaccia apiRagioneria = new GdeInterfaccia();
+        GdeInterfaccia apiBackoffice = new GdeInterfaccia();
+        GdeInterfaccia apiPendenze = new GdeInterfaccia();
+        GdeInterfaccia apiBackendIO = new GdeInterfaccia();
+        GdeInterfaccia apiMaggioliJPPA = new GdeInterfaccia();
+        giornale.setApiPagoPA(apiPagoPA);
+        giornale.setApiEnte(apiEnte);
+        giornale.setApiPagamento(apiPagamento);
+        giornale.setApiRagioneria(apiRagioneria);
+        giornale.setApiBackoffice(apiBackoffice);
+        giornale.setApiPendenze(apiPendenze);
+        giornale.setApiBackendIO(apiBackendIO);
+        giornale.setApiMaggioliJPPA(apiMaggioliJPPA);
+
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_PAGOPA, giornale)).isSameAs(apiPagoPA);
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_ENTE, giornale)).isSameAs(apiEnte);
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_PAGAMENTO, giornale)).isSameAs(apiPagamento);
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_RAGIONERIA, giornale)).isSameAs(apiRagioneria);
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_BACKOFFICE, giornale)).isSameAs(apiBackoffice);
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_PENDENZE, giornale)).isSameAs(apiPendenze);
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_BACKEND_IO, giornale)).isSameAs(apiBackendIO);
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_MAGGIOLI_JPPA, giornale)).isSameAs(apiMaggioliJPPA);
+    }
+
+    @Test
+    @DisplayName("getConfigurazioneComponente should return null for unmapped components and null inputs")
+    void testGetConfigurazioneComponenteNullCases() {
+        Giornale giornale = new Giornale();
+
+        assertThat(gdeService.getConfigurazioneComponente(null, giornale)).isNull();
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.API_MAGGIOLI_JPPA, null)).isNull();
+        assertThat(gdeService.getConfigurazioneComponente(null, null)).isNull();
+        // Componente non mappato (default branch)
+        assertThat(gdeService.getConfigurazioneComponente(ComponenteEvento.GOVPAY, giornale)).isNull();
     }
 
     @Test
