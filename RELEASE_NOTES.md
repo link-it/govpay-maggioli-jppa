@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.0.3 — 2026-05-12
+
+Release di manutenzione: pulizia della configurazione di logging.
+
+### Configurazione
+- Rimosse da `application.properties` le direttive `logging.level.*` (root, `it.govpay.maggioli.batch`, `org.springframework.batch`, `org.springframework.web.client`). La configurazione di logging è ora demandata al runtime (env, profili dedicati, configurazione esterna). I livelli verbosi per i test restano in `application-test.properties`.
+
+### Compatibilità
+Nessuna breaking change. In caso si volessero ripristinare i livelli precedenti, è sufficiente fornirli via variabili d'ambiente, `--logging.level.*` o profilo dedicato.
+
 ## 1.0.2 — 2026-05-06
 
 Release di manutenzione: aggiornamento dipendenze GovPay e potenziamento della pipeline di build/release.
