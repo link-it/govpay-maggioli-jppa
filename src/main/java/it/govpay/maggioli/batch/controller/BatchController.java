@@ -2,8 +2,8 @@ package it.govpay.maggioli.batch.controller;
 
 import java.time.ZoneId;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -30,13 +30,13 @@ public class BatchController extends AbstractBatchController {
 
     public BatchController(
             JobExecutionHelper jobExecutionHelper,
-            JobExplorer jobExplorer,
+            JobRepository jobRepository,
             @Qualifier("maggioliJppaNotificationJob") Job maggioliJppaNotificationJob,
             Environment environment,
             ZoneId applicationZoneId,
             @Value("${scheduler.maggioliJppaNotificationJob.fixedDelayString:600000}") long schedulerIntervalMillis,
             ConnettoreService connettoreService) {
-        super(jobExecutionHelper, jobExplorer, environment, applicationZoneId, schedulerIntervalMillis);
+        super(jobExecutionHelper, jobRepository, environment, applicationZoneId, schedulerIntervalMillis);
         this.maggioliJppaNotificationJob = maggioliJppaNotificationJob;
         this.connettoreService = connettoreService;
     }

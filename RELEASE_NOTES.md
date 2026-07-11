@@ -1,5 +1,30 @@
 # Release Notes
 
+## 2.0.0 — 2026-07-11
+
+Major release: migrazione dello stack applicativo a **Spring Boot 4 / Spring Framework 7** (con Spring Batch 6, Hibernate 7, Jackson 3, Java 21).
+
+### Aggiornamenti dipendenze
+- `govpay-bom` aggiornato a **2.0.1** (parent BOM): Spring Boot **4.1.0**, Spring Framework **7.0.8**, Spring Batch **6.0.4**, Hibernate **7.4.1**, Jackson **3.1.4**, Java **21**.
+- `govpay-common` aggiornato a **2.0.0**.
+- `openapi-generator-maven-plugin` aggiornato a **7.23.0**; il client Maggioli è ora generato per Spring Boot 4 / Jackson 3 (`serializationLibrary=jackson`, `useSpringBoot4=true`, `useJackson3=true`).
+
+### Migrazione Jackson 2 → 3 (`tools.jackson`)
+- `WebConfig`: `ObjectMapper` ricostruito con l'API builder immutabile di Jackson 3 (`JsonMapper.builder()`, `EnumFeature`/`DateTimeFeature`), coerente con i serializer `OffsetDateTime` di `govpay-common` 2.0.0.
+- `GdeService`: `ObjectMapper` migrato a `tools.jackson.databind.ObjectMapper` (richiesto da `AbstractGdeService`).
+
+### Migrazione Spring Batch 5 → 6
+- Adeguati i package riorganizzati (`core.job`, `core.step`, `core.job.parameters`, `core.listener`, `infrastructure.item`, `infrastructure.repeat`) e la rinomina `JobParametersInvalidException` → `InvalidJobParametersException`.
+- `JobLauncher` sostituito da `JobOperator` (`run()` → `start()`) in `BatchJobConfiguration` e `MaggioliJppaBatchScheduler`.
+- `JobExplorer` sostituito da `JobRepository` in `BatchController`, allineato alle nuove firme di `AbstractBatchController` e `JobConcurrencyService`.
+
+### Migrazione Spring Boot 4
+- `@EntityScan` spostato nel package `org.springframework.boot.persistence.autoconfigure`.
+- Nuova classe `BatchInfraConfig`: i bean infrastrutturali (`taskExecutor`, `jobExecutionHelper`, `jobConcurrencyService`) sono stati estratti da `BatchJobConfiguration` per evitare la dipendenza circolare `entityManagerFactory → batchJobConfiguration → transactionManager` introdotta dal nuovo bootstrap JPA di Spring Boot 4.
+
+### Compatibilità
+Release major con **breaking change** infrastrutturali: richiede Java 21 a runtime e l'ecosistema GovPay allineato al BOM 2.x (`govpay-common` 2.0.0). Nessuna modifica al comportamento funzionale del batch di notifica.
+
 ## 1.0.3 — 2026-05-12
 
 Release di manutenzione: pulizia della configurazione di logging.

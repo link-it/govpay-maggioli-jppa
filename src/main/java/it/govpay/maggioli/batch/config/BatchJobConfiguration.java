@@ -12,20 +12,16 @@ import it.govpay.maggioli.batch.step3.SendNotificationProcessor;
 import it.govpay.maggioli.batch.step3.SendNotificationReader;
 import it.govpay.maggioli.batch.step3.SendNotificationWriter;
 import it.govpay.maggioli.batch.tasklet.CleanupJppaNotificheTasklet;
-import it.govpay.common.batch.runner.JobExecutionHelper;
-import it.govpay.common.batch.service.JobConcurrencyService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.Step;
-import org.springframework.batch.core.explore.JobExplorer;
+import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
-import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.core.job.parameters.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
@@ -84,17 +80,6 @@ public class BatchJobConfiguration {
         return backOffPolicy;
 	}
 
-    @Bean
-    public JobConcurrencyService jobConcurrencyService(JobExplorer jobExplorer) {
-        return new JobConcurrencyService(jobExplorer, jobRepository, batchProperties.getStaleThresholdMinutes());
-    }
-
-    @Bean
-    public JobExecutionHelper jobExecutionHelper(JobLauncher jobLauncher, JobConcurrencyService jobConcurrencyService) {
-        return new JobExecutionHelper(jobLauncher, jobConcurrencyService,
-            batchProperties.getClusterId(), batchProperties.getZoneId());
-    }
-
     /**
      * Main Maggioli JPPA Notification Job with 2 steps
      */
@@ -131,7 +116,8 @@ public class BatchJobConfiguration {
     public Step maggioliHeadersAcquisitionStep(
         MaggioliJppaHeadersReader maggioliHeadersReader,
         MaggioliJppaHeadersProcessor maggioliHeadersProcessor,
-        MaggioliJppaHeadersWriter maggioliHeadersWriter
+        MaggioliJppaHeadersWriter maggioliHeadersWriter,
+        SimpleAsyncTaskExecutor taskExecutor
     ) {
         return new StepBuilder("maggioliHeadersAcquisitionStep", jobRepository)
             .<DominioProcessingContext, MaggioliHeadersBatch>chunk(batchProperties.getChunkSize(), transactionManager)
@@ -139,7 +125,7 @@ public class BatchJobConfiguration {
             .processor(maggioliHeadersProcessor)
             .writer(maggioliHeadersWriter)
             .listener(maggioliHeadersReader) // Register reader as step listener for queue reset
-            .taskExecutor(taskExecutor())
+            .taskExecutor(taskExecutor)
             .build();
     }
 
@@ -180,13 +166,14 @@ public class BatchJobConfiguration {
     @Bean
     public Step maggioliSendNotificationStep(
         DominioPartitioner dominioPartitioner,
-        Step maggioliSendNotificationWorkerStep
+        Step maggioliSendNotificationWorkerStep,
+        SimpleAsyncTaskExecutor taskExecutor
     ) {
         return new StepBuilder("maggioliSendNotificationStep", jobRepository)
             .partitioner("sendNotificationWorkerStep", dominioPartitioner)
             .step(maggioliSendNotificationWorkerStep)
             .gridSize(batchProperties.getThreadPoolSize()) // Numero di partizioni parallele
-            .taskExecutor(taskExecutor())
+            .taskExecutor(taskExecutor)
             .build();
     }
 
@@ -214,16 +201,6 @@ public class BatchJobConfiguration {
             .retry(RestClientException.class)
             .listener(sendNotificationRetryListener)
             .build();
-    }
-
-    /**
-     * Task executor for parallel processing in Step 2
-     */
-    @Bean
-    public SimpleAsyncTaskExecutor taskExecutor() {
-        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("maggioli-batch-");
-        executor.setConcurrencyLimit(batchProperties.getThreadPoolSize());
-        return executor;
     }
 
 }
