@@ -17,6 +17,12 @@
 	- WebConfig: ObjectMapper ricostruito con l'API builder immutabile
 	  (JsonMapper.builder, EnumFeature/DateTimeFeature)
 	- GdeService: ObjectMapper migrato a tools.jackson.databind.ObjectMapper
+	- SendingUtils: parsing contabilita' migrato a Jackson 3
+	  (JsonMapper.builder, EnumFeature, JacksonException)
+	- Rimosse le dipendenze dirette Jackson 2 (jackson-databind e
+	  jackson-datatype-jsr310 di com.fasterxml); l'applicazione usa ora
+	  esclusivamente Jackson 3. Risolve la vulnerabilita'
+	  GHSA-5jmj-h7xm-6q6v su jackson-databind 2.x rilevata da OSV Scanner.
 
 	Migrazione Spring Batch 5 -> 6:
 	- Adeguati i package riorganizzati (core.job, core.step,

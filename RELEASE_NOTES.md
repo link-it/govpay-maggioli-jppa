@@ -12,6 +12,8 @@ Major release: migrazione dello stack applicativo a **Spring Boot 4 / Spring Fra
 ### Migrazione Jackson 2 → 3 (`tools.jackson`)
 - `WebConfig`: `ObjectMapper` ricostruito con l'API builder immutabile di Jackson 3 (`JsonMapper.builder()`, `EnumFeature`/`DateTimeFeature`), coerente con i serializer `OffsetDateTime` di `govpay-common` 2.0.0.
 - `GdeService`: `ObjectMapper` migrato a `tools.jackson.databind.ObjectMapper` (richiesto da `AbstractGdeService`).
+- `SendingUtils`: parsing della contabilità migrato a Jackson 3 (`JsonMapper.builder()`, `EnumFeature`, `JacksonException`).
+- Rimosse le dipendenze dirette **Jackson 2** (`com.fasterxml.jackson.core:jackson-databind`, `com.fasterxml.jackson.datatype:jackson-datatype-jsr310`): l'applicazione usa ora esclusivamente Jackson 3, con supporto `java.time` integrato in `jackson-databind`. Risolve la vulnerabilità **GHSA-5jmj-h7xm-6q6v** su `jackson-databind` 2.x rilevata da OSV Scanner. (Resta transitivo il solo artefatto `jackson-annotations`, condiviso e richiesto da Jackson 3, privo di logica di deserializzazione.)
 
 ### Migrazione Spring Batch 5 → 6
 - Adeguati i package riorganizzati (`core.job`, `core.step`, `core.job.parameters`, `core.listener`, `infrastructure.item`, `infrastructure.repeat`) e la rinomina `JobParametersInvalidException` → `InvalidJobParametersException`.
