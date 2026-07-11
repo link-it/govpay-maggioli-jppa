@@ -1,7 +1,7 @@
 package it.govpay.maggioli.batch.listener;
 
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.StepExecution;
+import org.springframework.batch.core.job.JobExecution;
+import org.springframework.batch.core.step.StepExecution;
 import org.springframework.stereotype.Component;
 
 import it.govpay.common.batch.listener.AbstractBatchExecutionListener;

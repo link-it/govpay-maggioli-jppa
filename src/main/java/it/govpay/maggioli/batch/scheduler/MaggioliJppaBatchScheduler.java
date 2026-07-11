@@ -1,10 +1,10 @@
 package it.govpay.maggioli.batch.scheduler;
 
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.JobParameters;
-import org.springframework.batch.core.JobParametersBuilder;
-import org.springframework.batch.core.launch.JobLauncher;
+import org.springframework.batch.core.job.Job;
+import org.springframework.batch.core.job.JobExecution;
+import org.springframework.batch.core.job.parameters.JobParameters;
+import org.springframework.batch.core.job.parameters.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobOperator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -19,14 +19,14 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(prefix = "govpay.batch", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class MaggioliJppaBatchScheduler {
 
-    private final JobLauncher jobLauncher;
+    private final JobOperator jobOperator;
     private final Job maggioliJppaNotificationJob;
 
     public MaggioliJppaBatchScheduler(
-        JobLauncher jobLauncher,
+        JobOperator jobOperator,
         Job maggioliJppaNotificationJob
     ) {
-        this.jobLauncher = jobLauncher;
+        this.jobOperator = jobOperator;
         this.maggioliJppaNotificationJob = maggioliJppaNotificationJob;
     }
 
@@ -43,7 +43,7 @@ public class MaggioliJppaBatchScheduler {
                 .addLong("timestamp", System.currentTimeMillis())
                 .toJobParameters();
 
-            res = jobLauncher.run(maggioliJppaNotificationJob, jobParameters);
+            res = jobOperator.start(maggioliJppaNotificationJob, jobParameters);
 
             log.info("Maggioli JPPA Notification Job completed successfully");
 

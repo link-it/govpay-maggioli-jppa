@@ -5,7 +5,7 @@ import it.govpay.maggioli.batch.dto.DominioProcessingContext;
 import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch;
 import it.govpay.maggioli.batch.repository.RptRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.infrastructure.item.ItemProcessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 

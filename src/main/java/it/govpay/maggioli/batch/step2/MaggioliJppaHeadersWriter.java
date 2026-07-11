@@ -4,8 +4,8 @@ import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch;
 import it.govpay.maggioli.batch.entity.JppaNotifiche;
 import it.govpay.maggioli.batch.repository.JppaNotificheRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.item.Chunk;
-import org.springframework.batch.item.ItemWriter;
+import org.springframework.batch.infrastructure.item.Chunk;
+import org.springframework.batch.infrastructure.item.ItemWriter;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 

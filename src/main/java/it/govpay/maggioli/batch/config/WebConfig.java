@@ -8,10 +8,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.cfg.DateTimeFeature;
+import tools.jackson.databind.cfg.EnumFeature;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 import it.govpay.common.utils.DateTimePatterns;
 import it.govpay.common.utils.OffsetDateTimeDeserializer;
@@ -25,25 +26,20 @@ public class WebConfig {
 
 	@Bean
 	public ObjectMapper objectMapper() {
-		ObjectMapper objectMapper = new ObjectMapper();
+		// Registra serializzatori/deserializzatori custom per OffsetDateTime
+		SimpleModule dateModule = new SimpleModule();
+		dateModule.addSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer());
+		dateModule.addDeserializer(OffsetDateTime.class, new OffsetDateTimeDeserializer());
 
-		objectMapper.setTimeZone(TimeZone.getTimeZone(timezone));
-
-		objectMapper.setDateFormat(
-			new SimpleDateFormat(DateTimePatterns.PATTERN_TIMESTAMP_3_YYYY_MM_DD_T_HH_MM_SS_SSSXXX)
-		);
-
-		objectMapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
-		objectMapper.enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING);
-
-		objectMapper.enable(SerializationFeature.WRITE_DATES_WITH_ZONE_ID);
-		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-		JavaTimeModule javaTimeModule = new JavaTimeModule();
-		javaTimeModule.addSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer());
-		javaTimeModule.addDeserializer(OffsetDateTime.class, new OffsetDateTimeDeserializer());
-		objectMapper.registerModule(javaTimeModule);
-
-		return objectMapper;
+		// Jackson 3: ObjectMapper e' immutabile, la configurazione avviene tramite builder.
+		return JsonMapper.builder()
+			.defaultTimeZone(TimeZone.getTimeZone(timezone))
+			.defaultDateFormat(new SimpleDateFormat(DateTimePatterns.PATTERN_TIMESTAMP_3_YYYY_MM_DD_T_HH_MM_SS_SSSXXX))
+			.addModule(dateModule)
+			.enable(EnumFeature.READ_ENUMS_USING_TO_STRING)
+			.enable(EnumFeature.WRITE_ENUMS_USING_TO_STRING)
+			.enable(DateTimeFeature.WRITE_DATES_WITH_ZONE_ID)
+			.disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
+			.build();
 	}
 }

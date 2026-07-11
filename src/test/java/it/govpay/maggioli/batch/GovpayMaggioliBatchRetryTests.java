@@ -4,10 +4,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.JobExecution;
-import org.springframework.batch.core.explore.JobExplorer;
-import org.springframework.batch.item.Chunk;
-import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.batch.core.job.JobExecution;
+import org.springframework.batch.core.repository.JobRepository;
+import org.springframework.batch.infrastructure.item.Chunk;
+import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -69,7 +69,7 @@ class GovpayMaggioliBatchRetryTests {
 	private static final String ESITO_OK_TEST = EsitoEnum.OK.name();
 
 	@Autowired
-	JobExplorer jobExplorer;
+	JobRepository jobRepository;
 
 	@Autowired
 	MaggioliJppaBatchScheduler batchScheduler;

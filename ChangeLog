@@ -1,3 +1,45 @@
+2026-07-11  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* Avanzamento versione 2.0.0
+
+	* [Build]
+	Migrazione dello stack applicativo a Spring Boot 4 / Spring Framework 7:
+	- govpay-bom aggiornato dalla 1.1.3 alla 2.0.1 (Spring Boot 4.1.0,
+	  Spring Framework 7.0.8, Spring Batch 6.0.4, Hibernate 7.4.1,
+	  Jackson 3.1.4, Java 21)
+	- govpay-common aggiornato dalla 1.1.2 alla 2.0.0
+	- openapi-generator-maven-plugin aggiornato dalla 7.10.0 alla 7.23.0;
+	  client Maggioli generato per Spring Boot 4 / Jackson 3
+	  (serializationLibrary=jackson, useSpringBoot4=true, useJackson3=true)
+
+	* [Codice]
+	Migrazione Jackson 2 -> 3 (tools.jackson):
+	- WebConfig: ObjectMapper ricostruito con l'API builder immutabile
+	  (JsonMapper.builder, EnumFeature/DateTimeFeature)
+	- GdeService: ObjectMapper migrato a tools.jackson.databind.ObjectMapper
+
+	Migrazione Spring Batch 5 -> 6:
+	- Adeguati i package riorganizzati (core.job, core.step,
+	  core.job.parameters, core.listener, infrastructure.item,
+	  infrastructure.repeat) e la rinomina JobParametersInvalidException
+	  -> InvalidJobParametersException
+	- JobLauncher sostituito da JobOperator (run -> start) in
+	  BatchJobConfiguration e MaggioliJppaBatchScheduler
+	- JobExplorer sostituito da JobRepository in BatchController
+
+	Migrazione Spring Boot 4:
+	- @EntityScan spostato nel package boot.persistence.autoconfigure
+	- Nuova classe BatchInfraConfig: estratti da BatchJobConfiguration i
+	  bean taskExecutor, jobExecutionHelper e jobConcurrencyService per
+	  evitare la dipendenza circolare entityManagerFactory ->
+	  batchJobConfiguration -> transactionManager introdotta dal nuovo
+	  bootstrap JPA di Spring Boot 4
+
+	* [Test]
+	Adeguati i test alla nuova API (costruttore JobExecution di Spring
+	Batch 6, ObjectMapper Jackson 3, JobRepository al posto di JobExplorer).
+	Suite completa verde (85/85).
+
 2026-05-12  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* Avanzamento versione 1.0.3

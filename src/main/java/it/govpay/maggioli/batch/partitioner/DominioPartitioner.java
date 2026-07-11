@@ -4,8 +4,8 @@ import it.govpay.maggioli.batch.entity.JppaConfig;
 import it.govpay.maggioli.batch.repository.JppaConfigRepository;
 import it.govpay.maggioli.batch.repository.JppaNotificheRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.core.partition.support.Partitioner;
-import org.springframework.batch.item.ExecutionContext;
+import org.springframework.batch.core.partition.Partitioner;
+import org.springframework.batch.infrastructure.item.ExecutionContext;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
