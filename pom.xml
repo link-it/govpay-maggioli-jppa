@@ -21,7 +21,7 @@
     <description>Batch di notifiche pagamenti ai servizi Maggioli</description>
 
     <properties>
-        <govpay-common.version>2.0.0</govpay-common.version>
+        <govpay-common.version>2.0.1-SNAPSHOT</govpay-common.version>
         <openapi-generator.version>7.23.0</openapi-generator.version>
 
         <!-- Code Coverage -->
@@ -125,6 +125,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Observability: endpoint di scrape Prometheus -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
         <!-- Lombok for reducing boilerplate code -->
