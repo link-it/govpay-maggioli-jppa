@@ -10,6 +10,8 @@ import org.springframework.batch.infrastructure.item.Chunk;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -53,6 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = GovpayMaggioliBatchApplication.class)
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"spring.batch.job.enabled=false"})
+@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 class GovpayMaggioliBatchRetryTests {
 	private static final String COD_DOMINIO_TEST = "12345678901";
 	private static final String COD_DOMINIO_PART1 = "DOM001";
