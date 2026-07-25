@@ -1,0 +1,25 @@
+package it.govpay.maggioli.batch.config;
+
+import org.springframework.batch.core.job.Job;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+
+import it.govpay.common.batch.runner.JobExecutionHelper;
+
+/**
+ * Configurazione di test che fornisce il bean ScheduledJobRunner per il profilo "test".
+ * <p>
+ * Necessaria perché ScheduledJobRunner ha @Profile("default") e quindi non viene
+ * creato automaticamente quando i test usano @ActiveProfiles("test").
+ */
+@TestConfiguration
+public class TestScheduledJobRunnerConfig {
+
+    @Bean
+    public ScheduledJobRunner scheduledJobRunner(
+            JobExecutionHelper jobExecutionHelper,
+            @Qualifier("maggioliJppaNotificationJob") Job maggioliJppaNotificationJob) {
+        return new ScheduledJobRunner(jobExecutionHelper, maggioliJppaNotificationJob);
+    }
+}
