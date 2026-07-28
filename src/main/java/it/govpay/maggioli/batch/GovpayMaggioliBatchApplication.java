@@ -15,7 +15,7 @@ import it.govpay.common.client.config.GovPayClientAutoConfiguration;
 @SpringBootApplication
 @EnableScheduling
 @Import(GovPayClientAutoConfiguration.class)
-@EntityScan(basePackages = {"it.govpay.maggioli.batch.entity", "it.govpay.common.client.entity"})
+@EntityScan(basePackages = {"it.govpay.maggioli.batch.entity", "it.govpay.common.client.entity", "it.govpay.common.entity"})
 @EnableJpaRepositories(basePackages = "it.govpay.maggioli.batch.repository")
 public class GovpayMaggioliBatchApplication {
 

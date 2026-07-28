@@ -21,7 +21,7 @@
     <description>Batch di notifiche pagamenti ai servizi Maggioli</description>
 
     <properties>
-        <govpay-common.version>2.0.1-SNAPSHOT</govpay-common.version>
+        <govpay-common.version>2.0.3-SNAPSHOT</govpay-common.version>
         <openapi-generator.version>7.23.0</openapi-generator.version>
 
         <!-- Code Coverage -->

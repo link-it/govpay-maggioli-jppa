@@ -20,6 +20,7 @@ import it.govpay.common.batch.dto.NextExecutionInfo;
 import it.govpay.common.batch.runner.JobExecutionHelper;
 import it.govpay.common.client.service.ConnettoreService;
 import it.govpay.maggioli.batch.Costanti;
+import jakarta.persistence.EntityManager;
 
 @RestController
 @RequestMapping("/api/batch")
@@ -35,8 +36,9 @@ public class BatchController extends AbstractBatchController {
             Environment environment,
             ZoneId applicationZoneId,
             @Value("${scheduler.maggioliJppaNotificationJob.fixedDelayString:600000}") long schedulerIntervalMillis,
-            ConnettoreService connettoreService) {
-        super(jobExecutionHelper, jobRepository, environment, applicationZoneId, schedulerIntervalMillis);
+            ConnettoreService connettoreService,
+            EntityManager entityManager) {
+        super(jobExecutionHelper, jobRepository, environment, applicationZoneId, schedulerIntervalMillis, entityManager);
         this.maggioliJppaNotificationJob = maggioliJppaNotificationJob;
         this.connettoreService = connettoreService;
     }
@@ -49,6 +51,18 @@ public class BatchController extends AbstractBatchController {
     @Override
     protected String getJobName() {
         return Costanti.MAGGIOLI_JPPA_NOTIFICATION_JOB_NAME;
+    }
+
+    @Override
+    protected String getDisplayName() {
+        return "GovPay Maggioli JPPA Batch";
+    }
+
+    @Override
+    protected String getDescription() {
+        return "Notifica automatica dei pagamenti al servizio Maggioli JPPA tramite API REST: il batch legge "
+                + "le ricevute di pagamento da GovPay e le invia al servizio Maggioli, producendo un tracciato "
+                + "di esito.";
     }
 
     @Override
