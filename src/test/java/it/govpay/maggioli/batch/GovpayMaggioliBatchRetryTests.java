@@ -10,6 +10,7 @@ import org.springframework.batch.infrastructure.item.Chunk;
 import org.springframework.batch.infrastructure.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,8 +25,9 @@ import it.govpay.maggioli.batch.dto.MaggioliHeadersBatch.NotificaHeader;
 import it.govpay.maggioli.batch.entity.JppaConfig;
 import it.govpay.maggioli.batch.entity.RPT;
 import it.govpay.maggioli.batch.repository.JppaConfigRepository;
+import it.govpay.maggioli.batch.config.ScheduledJobRunner;
+import it.govpay.maggioli.batch.config.TestScheduledJobRunnerConfig;
 import it.govpay.maggioli.batch.repository.JppaNotificheRepository;
-import it.govpay.maggioli.batch.scheduler.MaggioliJppaBatchScheduler;
 import it.govpay.maggioli.batch.step2.MaggioliJppaHeadersProcessor;
 import it.govpay.maggioli.batch.step2.MaggioliJppaHeadersReader;
 import it.govpay.maggioli.batch.step2.MaggioliJppaHeadersWriter;
@@ -53,8 +55,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Integration tests for GovpayFdrBatchApplication
  */
 @SpringBootTest(classes = GovpayMaggioliBatchApplication.class)
+@Import(TestScheduledJobRunnerConfig.class)
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"spring.batch.job.enabled=false"})
+@TestPropertySource(properties = {"spring.batch.job.enabled=false", "scheduler.initialDelayString=3600000"})
 @DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 class GovpayMaggioliBatchRetryTests {
 	private static final String COD_DOMINIO_TEST = "12345678901";
@@ -75,7 +78,7 @@ class GovpayMaggioliBatchRetryTests {
 	JobRepository jobRepository;
 
 	@Autowired
-	MaggioliJppaBatchScheduler batchScheduler;
+	ScheduledJobRunner batchScheduler;
 
 	private AtomicInteger headerProcessCounter = new AtomicInteger(0);
 	private AtomicInteger notificationProcessorCounter = new AtomicInteger(0);
@@ -171,7 +174,7 @@ class GovpayMaggioliBatchRetryTests {
 			return notificationCompleteData;
 		});
 
-		final JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		final JobExecution execution = batchScheduler.runBatchMaggioliJppaNotificationJob();
 		assertEquals(BatchStatus.COMPLETED, execution.getStatus());
 		assertEquals(3, notificationProcessorCounter.get());
 	}
@@ -195,7 +198,7 @@ class GovpayMaggioliBatchRetryTests {
 			return notificationCompleteData;
 		});
 
-		JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		JobExecution execution = batchScheduler.runBatchMaggioliJppaNotificationJob();
 		assertEquals(BatchStatus.FAILED, execution.getStatus());
 		assertEquals(3, notificationProcessorCounter.get());
 
@@ -210,7 +213,7 @@ class GovpayMaggioliBatchRetryTests {
 			notificationProcessorCounter.addAndGet(1);
 			return notificationCompleteData;
 		});
-		execution = batchScheduler.runMaggioliJppaNotificationJob();
+		execution = batchScheduler.runBatchMaggioliJppaNotificationJob();
 		assertEquals(BatchStatus.COMPLETED, execution.getStatus());
 		assertEquals(0, notificationProcessorCounter.get());
 	}
@@ -273,7 +276,7 @@ class GovpayMaggioliBatchRetryTests {
 			return notificationCompleteData;
 		});
 
-		JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		JobExecution execution = batchScheduler.runBatchMaggioliJppaNotificationJob();
 
 		// Il job completa con successo
 		assertEquals(BatchStatus.COMPLETED, execution.getStatus());
@@ -333,7 +336,7 @@ class GovpayMaggioliBatchRetryTests {
 			return notificationCompleteData;
 		});
 
-		JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		JobExecution execution = batchScheduler.runBatchMaggioliJppaNotificationJob();
 
 		// Il job completa con successo
 		assertEquals(BatchStatus.COMPLETED, execution.getStatus());
@@ -358,7 +361,7 @@ class GovpayMaggioliBatchRetryTests {
 
 		when(notificationProcessor.process(any())).thenThrow(new LoginFailedException("Login fallito per dominio " + COD_DOMINIO_TEST));
 
-		JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		JobExecution execution = batchScheduler.runBatchMaggioliJppaNotificationJob();
 		assertEquals(BatchStatus.FAILED, execution.getStatus());
 	}
 
@@ -391,7 +394,7 @@ class GovpayMaggioliBatchRetryTests {
 																  .build();
 		when(notificationProcessor.process(any())).thenReturn(errorData);
 
-		JobExecution execution = batchScheduler.runMaggioliJppaNotificationJob();
+		JobExecution execution = batchScheduler.runBatchMaggioliJppaNotificationJob();
 		assertEquals(BatchStatus.COMPLETED, execution.getStatus());
 	}
 }

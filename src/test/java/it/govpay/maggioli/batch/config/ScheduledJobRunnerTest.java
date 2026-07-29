@@ -17,6 +17,7 @@ import org.springframework.batch.core.job.JobExecution;
 import org.springframework.batch.core.job.JobInstance;
 import org.springframework.batch.core.job.parameters.JobParameters;
 
+import it.govpay.common.batch.TriggerType;
 import it.govpay.common.batch.runner.JobExecutionHelper;
 import it.govpay.common.batch.runner.JobExecutionHelper.PreExecutionCheckResult;
 import it.govpay.common.batch.runner.JobExecutionHelper.PreExecutionResult;
@@ -67,13 +68,13 @@ class ScheduledJobRunnerTest {
             .thenReturn(new PreExecutionResult(PreExecutionCheckResult.CAN_PROCEED, null, null));
 
         JobExecution launched = new JobExecution(2L, new JobInstance(1L, JOB_NAME), new JobParameters());
-        when(jobExecutionHelper.runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME)))
+        when(jobExecutionHelper.runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME), eq(TriggerType.SCHEDULED)))
             .thenReturn(launched);
 
         JobExecution result = runner.runBatchMaggioliJppaNotificationJob();
 
         assertNotNull(result);
-        verify(jobExecutionHelper).runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME));
+        verify(jobExecutionHelper).runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME), eq(TriggerType.SCHEDULED));
     }
 
     @Test
@@ -82,13 +83,13 @@ class ScheduledJobRunnerTest {
             .thenReturn(new PreExecutionResult(PreExecutionCheckResult.STALE_ABANDONED_CAN_PROCEED, null, null));
 
         JobExecution launched = new JobExecution(2L, new JobInstance(1L, JOB_NAME), new JobParameters());
-        when(jobExecutionHelper.runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME)))
+        when(jobExecutionHelper.runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME), eq(TriggerType.SCHEDULED)))
             .thenReturn(launched);
 
         JobExecution result = runner.runBatchMaggioliJppaNotificationJob();
 
         assertNotNull(result);
-        verify(jobExecutionHelper).runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME));
+        verify(jobExecutionHelper).runJob(eq(maggioliJppaNotificationJob), eq(JOB_NAME), eq(TriggerType.SCHEDULED));
     }
 
     @Test
