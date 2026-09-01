@@ -1,3 +1,30 @@
+2026-09-01  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [DDL]
+	Allineati i metadati Spring Batch alla 6.0: la sequence del job instance e'
+	rinominata BATCH_JOB_SEQ -> BATCH_JOB_INSTANCE_SEQ in tabelle_batch-create.sql
+	per tutti e cinque i vendor (PostgreSQL, Oracle, MySQL, HSQLDB, SQL Server).
+	E' il nome atteso da JobRepositoryFactoryBean di Spring Batch 6, che di default
+	usa <table-prefix>JOB_INSTANCE_SEQ; il nome precedente resta utilizzabile solo
+	impostando SPRING_BATCH_JDBC_SCHEMA_LEGACY=TRUE (o la property di sistema
+	spring.batch.jdbc.schema.legacy), deprecato. Su PostgreSQL e' aggiornato anche
+	il DEFAULT nextval() di BATCH_JOB_INSTANCE.JOB_INSTANCE_ID, su MySQL l'INSERT
+	di inizializzazione della tabella che emula la sequence.
+	
+	Aggiunti cinque script spring-batch-6.0-migration.sql, uno per vendor, per i
+	database gia' popolati: la rinomina non viene applicata
+	dall'inizializzazione automatica, che salta l'esecuzione degli script quando
+	la tabella di check esiste gia'. Gli statement sono quelli ufficiali di
+	spring-batch-core (migration/6.0/migration-<vendor>.sql). Per SQL Server e'
+	volutamente esclusa la conversione VARCHAR -> NVARCHAR prevista dalla
+	migrazione ufficiale: SQLServerDialect mappa String su varchar salvo
+	@Nationalized, quindi con ddl-auto=validate farebbe fallire l'avvio.
+	
+	Nota: con Spring Boot 4.1.1 il JobRepository di default e'
+	ResourcelessJobRepository (DefaultBatchConfiguration.jobRepository()), quindi
+	i metadati batch non sono persistiti e la rinomina non ha effetti a runtime
+	finche' non viene configurato un JobRepository JDBC.
+
 2026-07-25  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [Build]
