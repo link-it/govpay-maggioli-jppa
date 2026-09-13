@@ -97,7 +97,7 @@ jobs:
           ${{ runner.os }}-owasp-v${{ steps.owasp.outputs.version }}-
 
     - name: Build with Maven
-      run: mvn clean install -Dspring.profiles.active=test -Duser.timezone=Europe/Rome -DnvdApiKey=$NVD_API_KEY -DossIndexUsername=$OSS_INDEX_USER -DossIndexPassword=$OSS_INDEX_PASSWORD -DdataDirectory=.dependency-check/data -Dowasp.format=ALL -Dowasp.output.dir=./dependency-check-report $NOUPDATE_FLAG
+      run: mvn clean install -Pdist -Dspring.profiles.active=test -Duser.timezone=Europe/Rome -DnvdApiKey=$NVD_API_KEY -DossIndexUsername=$OSS_INDEX_USER -DossIndexPassword=$OSS_INDEX_PASSWORD -DdataDirectory=.dependency-check/data -Dowasp.format=ALL -Dowasp.output.dir=./dependency-check-report $NOUPDATE_FLAG
       env:
         NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         OSS_INDEX_USER: ${{ vars.OSS_INDEX_USER }}
@@ -156,6 +156,7 @@ jobs:
         name: govpay-maggioli-jppa-batch
         path: |
           target/govpay-maggioli-jppa-batch.jar
+          jar/sql.zip
           target/site/jacoco/jacoco.xml
           target/jacoco-html-report.zip
           target/dependency-check-report.html
@@ -354,17 +355,12 @@ jobs:
         rm -rf buildcontext
         mkdir -p buildcontext/
         cp -fr commons buildcontext/
-        # Dockerfile.daFile fa "COPY sql /opt/sql". La sorgente e'
-        # src/main/resources/sql: la stessa che il job release zippa in sql.zip
-        # e che Dockerfile.github scarica dalla release. Il job docker di
-        # produzione non la copia perche' usa Dockerfile.github, che non ne ha
-        # bisogno: per questo il primo docker-dev falliva sul COPY.
-        if [ -d ../src/main/resources/sql ]; then
-          cp -fr ../src/main/resources/sql buildcontext/
-        else
-          echo "::warning::src/main/resources/sql assente: creo una directory vuota per soddisfare il COPY del Dockerfile."
-          mkdir -p buildcontext/sql
-        fi
+        # Dockerfile.daFile fa "COPY sql /opt/sql". Il contenuto arriva da
+        # target/sql.zip, prodotto dal profilo dist nel job build: lo schema dei
+        # metadati Spring Batch estratto da spring-batch-core piu' gli script
+        # delle tabelle applicative. E' lo stesso zip che la release pubblica
+        # come asset e che Dockerfile.github scarica.
+        unzip -q -o ../artifacts/sql.zip -d buildcontext/
         cp -f ../artifacts/govpay-maggioli-jppa-batch.jar buildcontext/
         ls -lR buildcontext/ | head -40
 
@@ -449,13 +445,6 @@ jobs:
       run: |
         cp jar/govpay-maggioli-jppa-batch.jar jar/govpay-maggioli-jppa-batch-${{ github.ref_name }}.jar
 
-    - name: Zip SQL files
-      run: |
-        mkdir -p target
-        cd src/main/resources
-        zip -r ../../../target/sql.zip sql
-        cd ../../../
-
     - name: Assemble reports ZIP
       run: |
         mkdir -p reports/owasp reports/jacoco reports/osv reports/sbom
@@ -478,7 +467,7 @@ jobs:
       with:
         files: |
           jar/govpay-maggioli-jppa-batch-${{ github.ref_name }}.jar
-          target/sql.zip
+          jar/sql.zip
           release-reports-${{ github.ref_name }}.zip
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

@@ -65,11 +65,15 @@ done
 rm -rf buildcontext
 mkdir -p buildcontext/
 cp -fr commons buildcontext/
-if [ -d ../src/main/resources/sql ]; then
-  cp -fr ../src/main/resources/sql buildcontext/
+# Gli script SQL dell'immagine arrivano da target/sql.zip, prodotto dal profilo
+# dist: contiene lo schema dei metadati Spring Batch estratto da
+# spring-batch-core piu' gli script delle tabelle applicative. E' lo stesso
+# archivio che la pipeline pubblica come asset di release.
+if [ -f ../target/sql.zip ]; then
+  unzip -q -o ../target/sql.zip -d buildcontext/
 else
   mkdir -p buildcontext/sql
-  echo "WARN: directory ../src/main/resources/sql non trovata, creata vuota"
+  echo "WARN: ../target/sql.zip non trovato: eseguire 'mvn -Pdist package' per generarlo."
 fi
 
 DOCKERBUILD_OPT=()

@@ -1,3 +1,51 @@
+2026-09-13  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [DDL]
+	Gli schemi dei metadati Spring Batch non sono piu' mantenuti in questo
+	repository. Rimossi i 5 tabelle_batch-create.sql e i 5
+	spring-batch-6.0-migration.sql: al loro posto il packaging estrae da
+	spring-batch-core, verbatim, gli schema-<vendor>.sql e l'albero migration/**,
+	che finiscono in /opt/sql/spring-batch. Lo schema segue cosi' in automatico la
+	versione della libreria definita in govpay-bom, e la deriva fra i batch (cinque
+	repository sono ancora fermi a BATCH_JOB_SEQ) non e' piu' possibile.
+	
+	In /opt/sql/<vendor>/ restano solo gli script nostri: create-db.sql,
+	drop-db.sql, delete-db.sql e spring-batch-cleanup.sql.
+	
+	Due conseguenze dell'adozione degli schemi upstream integrali:
+	- si perdono i quattro indici che aggiungevamo su BATCH_JOB_INSTANCE,
+	  BATCH_JOB_EXECUTION e BATCH_STEP_EXECUTION: upstream li spedisce solo per
+	  Oracle e lascia la scelta all'utente;
+	- su SQL Server upstream usa NVARCHAR dove noi usavamo VARCHAR. Con
+	  spring.jpa.hibernate.ddl-auto=validate e le entity batch di govpay-common,
+	  SQLServerDialect si aspetta varchar salvo @Nationalized: su quel vendor la
+	  validazione fallirebbe su 14 colonne. Gli altri vendor non sono interessati.
+	
+	* [Build]
+	Nuovo profilo "dist", non attivo di default: maven-dependency-plugin estrae gli
+	schemi da spring-batch-core in target/sql-upstream e maven-assembly-plugin
+	(src/assembly/sql.xml) produce target/sql.zip con l'albero completo piu' un file
+	sql/VERSION che registra le versioni di progetto, spring-batch e govpay-common
+	presenti nell'immagine.
+	
+	Gli script SQL non finiscono piu' nel jar applicativo per la parte batch:
+	nessun codice li leggeva dal classpath, erano peso morto.
+	
+	* [CI]
+	Il job build passa -Pdist e pubblica target/sql.zip fra gli artefatti. Il job
+	docker-dev scompatta quell'archivio nel build context invece di copiare
+	src/main/resources/sql, e il job release lo allega come asset al posto dello
+	step "Zip SQL files" che zippava i sorgenti. Dockerfile.github, che scarica
+	sql.zip dalla release, non cambia: un solo archivio alimenta immagine di
+	sviluppo, release e immagine di produzione.
+	
+	* [Docker]
+	init_maggioli_jppa_db.sh esegue lo schema batch da
+	/opt/sql/spring-batch/schema-${GOVPAY_DB_TYPE}.sql e logga il contenuto di
+	/opt/sql/VERSION all'avvio. MariaDB usa ora il proprio schema upstream invece
+	di quello MySQL. docker/build_image.sh scompatta target/sql.zip nel build
+	context, con avviso esplicito se manca.
+
 2026-09-03  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [Build]

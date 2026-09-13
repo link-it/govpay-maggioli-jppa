@@ -24,6 +24,10 @@
         <govpay-common.version>2.0.4-SNAPSHOT</govpay-common.version>
         <openapi-generator.version>7.23.0</openapi-generator.version>
 
+        <!-- Packaging degli script SQL per le immagini Docker (profilo dist) -->
+        <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
+        <maven-assembly-plugin.version>3.7.1</maven-assembly-plugin.version>
+
         <!-- Code Coverage -->
         <jacoco.version>0.8.13</jacoco.version>
 
@@ -86,6 +90,74 @@
 					<scope>provided</scope>
 				</dependency>
 			</dependencies>
+		</profile>
+		<!--
+			Packaging degli script SQL per le immagini Docker.
+
+			Gli schemi dei metadati Spring Batch non sono piu' mantenuti in questo
+			repository: vengono estratti in fase di packaging da spring-batch-core,
+			cosi' seguono automaticamente la versione della libreria definita nel bom.
+			Il profilo non e' attivo di default: serve solo a chi costruisce
+			un'immagine (pipeline docker-dev / release, docker/build_image.sh).
+		-->
+		<profile>
+			<id>dist</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-dependency-plugin</artifactId>
+						<version>${maven-dependency-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>unpack-spring-batch-schema</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>unpack</goal>
+								</goals>
+								<configuration>
+									<artifactItems>
+										<artifactItem>
+											<groupId>org.springframework.batch</groupId>
+											<artifactId>spring-batch-core</artifactId>
+											<version>${spring-batch.version}</version>
+											<type>jar</type>
+											<includes>org/springframework/batch/core/schema-*.sql,org/springframework/batch/core/migration/**</includes>
+											<outputDirectory>${project.build.directory}/sql-upstream</outputDirectory>
+										</artifactItem>
+									</artifactItems>
+									<!-- spring-batch-core e' una SNAPSHOT solo in sviluppo, ma il
+									     default del plugin non riestrae gli snapshot gia' scompattati -->
+									<overWriteSnapshots>true</overWriteSnapshots>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>${maven-assembly-plugin.version}</version>
+						<executions>
+							<execution>
+								<id>sql-zip</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>src/assembly/sql.xml</descriptor>
+									</descriptors>
+									<finalName>sql</finalName>
+									<appendAssemblyId>false</appendAssemblyId>
+									<attach>false</attach>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 
