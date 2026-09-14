@@ -1,3 +1,31 @@
+2026-09-14  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [Build]
+	Il profilo "dist" e' stato spostato in govpay-bom, insieme alla configurazione
+	di maven-dependency-plugin e maven-assembly-plugin nella sua pluginManagement:
+	e' identico per tutti e sette i batch e non ha senso duplicarlo. Da qui
+	spariscono il profilo e le due proprieta' di versione dei plugin; restano il
+	descrittore src/assembly/sql.xml, che elenca cosa finisce nell'archivio, e
+	src/assembly/VERSION. Richiede govpay-bom 2.0.5-SNAPSHOT o successivo.
+
+	Il comando non cambia: "mvn -Pjar,dist". Senza -Pdist la pluginManagement
+	ereditata non attiva nulla e sql.zip non viene prodotto.
+
+	* [CI]
+	Tre correzioni alla pipeline introdotta ieri, emerse al primo giro reale:
+	- il job build lanciava "-Pdist" da solo, che disattivando i profili
+	  activeByDefault spegneva il profilo "jar" e con lui i cinque driver JDBC in
+	  scope provided: tutti i test che caricano l'ApplicationContext fallivano con
+	  "Cannot load driver class: org.h2.Driver". Ora e' "-Pjar,dist";
+	- upload-artifact elencava "jar/sql.zip", ma l'assembly produce
+	  "target/sql.zip": il file non veniva caricato e docker-dev falliva sullo
+	  unzip. Il percorso corretto lascia invariati i consumatori, che trovano
+	  sql.zip alla radice dell'artefatto;
+	- lo step "Prepare build context" terminava con "ls -lR | head -40" sotto
+	  set -o pipefail: con novantadue file nel build context head chiude la pipe,
+	  ls riceve SIGPIPE e il pipefail faceva fallire lo step. Difetto latente da
+	  sempre, ora neutralizzato con "|| true" trattandosi di sola diagnostica.
+
 2026-09-13  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [DDL]
