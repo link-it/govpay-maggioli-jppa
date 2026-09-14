@@ -99,6 +99,12 @@
 			cosi' seguono automaticamente la versione della libreria definita nel bom.
 			Il profilo non e' attivo di default: serve solo a chi costruisce
 			un'immagine (pipeline docker-dev / release, docker/build_image.sh).
+
+			Va attivato SEMPRE insieme al profilo di packaging: "mvn -Pjar,dist".
+			Maven disattiva i profili activeByDefault non appena si passa -P, quindi
+			un "-Pdist" da solo spegne il profilo "jar" e con lui i cinque driver
+			JDBC in scope provided: i test che caricano l'ApplicationContext
+			fallirebbero con "Cannot load driver class: org.h2.Driver".
 		-->
 		<profile>
 			<id>dist</id>

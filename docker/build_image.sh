@@ -73,7 +73,7 @@ if [ -f ../target/sql.zip ]; then
   unzip -q -o ../target/sql.zip -d buildcontext/
 else
   mkdir -p buildcontext/sql
-  echo "WARN: ../target/sql.zip non trovato: eseguire 'mvn -Pdist package' per generarlo."
+  echo "WARN: ../target/sql.zip non trovato: eseguire 'mvn -Pjar,dist package' per generarlo."
 fi
 
 DOCKERBUILD_OPT=()
