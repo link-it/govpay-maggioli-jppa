@@ -362,7 +362,10 @@ jobs:
         # come asset e che Dockerfile.github scarica.
         unzip -q -o ../artifacts/sql.zip -d buildcontext/
         cp -f ../artifacts/govpay-maggioli-jppa-batch.jar buildcontext/
-        ls -lR buildcontext/ | head -40
+        # Solo diagnostica. Il "|| true" serve: con set -o pipefail, head che
+        # chiude la pipe manda SIGPIPE a ls e farebbe fallire lo step, cosa che
+        # ora accade sempre perche' sql.zip porta il listato oltre le 40 righe.
+        ls -lR buildcontext/ | head -40 || true
 
     - name: Build and push development image
       if: ${{ endsWith(needs.build.outputs.version, '-SNAPSHOT') }}
