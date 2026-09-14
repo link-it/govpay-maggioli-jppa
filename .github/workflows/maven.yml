@@ -156,7 +156,7 @@ jobs:
         name: govpay-maggioli-jppa-batch
         path: |
           target/govpay-maggioli-jppa-batch.jar
-          jar/sql.zip
+          target/sql.zip
           target/site/jacoco/jacoco.xml
           target/jacoco-html-report.zip
           target/dependency-check-report.html
