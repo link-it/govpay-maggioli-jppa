@@ -24,3 +24,6 @@ buildNumber.properties
 Thumbs.db
 
 docker/buildcontext/
+
+# Report di docker/scan_image.sh
+image-scan-report/
