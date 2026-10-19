@@ -133,8 +133,13 @@ class GovpayMaggioliBatchRetryTests {
 		when(headersReader.read()).thenReturn(res)
 								  .thenReturn(null);
 
+		// Lo step degli header e' multi-thread (taskExecutor) con chunk da
+		// batchProperties.getChunkSize(): a seconda di come i thread si dividono
+		// i domini, il writer riceve un chunk per dominio o un solo chunk con
+		// tutti i domini. Vanno accodati tutti gli elementi del chunk, non solo
+		// il primo, altrimenti con un chunk da piu' domini se ne perdono.
 		doAnswer(invocation -> { Chunk<? extends MaggioliHeadersBatch> arg0 = invocation.getArgument(0);
-								 headerQueue.add(arg0.getItems().get(0));
+								 headerQueue.addAll(arg0.getItems());
 								 return null;
 							   }).when(headersWriter).write(any());
 
