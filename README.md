@@ -197,7 +197,7 @@ Prima del primo avvio, nel database di GovPay devono esistere:
 - le tabelle dei metadati Spring Batch, create con lo script `sql/spring-batch/schema-<database>.sql` di `sql.zip`;
 - la tabella `jppa_notifiche`, creata con lo script `sql/<database>/create-db.sql` di `sql.zip` (o di `src/main/resources/sql/`).
 
-L'immagine Docker esegue entrambi gli script se `GOVPAY_MAGGIOLI_JPPA_POP_DB_SKIP=FALSE`. Gli script in `sql/cleanup/` cancellano i metadati delle esecuzioni vecchie e vanno pianificati periodicamente.
+L'immagine Docker esegue gli script delle tabelle che mancano se `GOVPAY_MAGGIOLI_JPPA_POP_DB_SKIP=FALSE`. Gli script in `sql/cleanup/` cancellano i metadati delle esecuzioni vecchie e vanno pianificati periodicamente.
 
 ### Jar standalone
 
@@ -264,14 +264,14 @@ Variabili d'ambiente dell'immagine, oltre alle proprietà Spring Boot in forma d
 | `MANAGEMENT_SERVER_PORT` | no | porta del servizio | Porta dedicata agli endpoint actuator |
 | `MANAGEMENT_ENDPOINTS` | no | `health,info,metrics,prometheus` | Endpoint actuator esposti |
 | `LOG_LEVEL_REFRESH_INTERVAL` | no | `60s` | Intervallo di rilettura dei livelli di log dal database |
-| `GOVPAY_MAGGIOLI_JPPA_POP_DB_SKIP` | no | `TRUE` | `FALSE` crea all'avvio le tabelle Spring Batch e `jppa_notifiche`, se la tabella `GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE` non esiste |
-| `GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE` | no | `batch_job_execution_context` | Tabella che indica che lo schema è già presente |
+| `GOVPAY_MAGGIOLI_JPPA_POP_DB_SKIP` | no | `TRUE` | `FALSE` crea all'avvio le tabelle che mancano: lo schema Spring Batch se non esiste la tabella `GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE`, `jppa_notifiche` se non esiste. Le due verifiche sono separate perché le tabelle Spring Batch possono essere già state create da un altro batch GovPay |
+| `GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE` | no | `batch_job_execution_context` | Tabella che indica che lo schema Spring Batch è già presente |
 | `GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_SKIP` | no | `FALSE` | Salta l'attesa della porta del database prima dell'inizializzazione |
 | `GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_MAX_RETRY` | no | `30` | Tentativi di connessione alla porta del database |
 | `GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_SLEEP_TIME` | no | `2` | Secondi tra un tentativo e l'altro |
 | `GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_CONNECT_TIMEOUT` | no | `5` | Timeout di ogni tentativo di connessione, in secondi |
-| `GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_SKIP` | no | `FALSE` | Salta la verifica della tabella e crea comunque lo schema |
-| `GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY` | no | `5` | Tentativi della verifica della tabella |
+| `GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_SKIP` | no | `FALSE` | Salta le verifiche delle tabelle ed esegue comunque entrambi gli script |
+| `GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY` | no | `5` | Tentativi di ciascuna verifica delle tabelle |
 | `GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_SLEEP_TIME` | no | `2` | Secondi tra un tentativo e l'altro |
 | `GOVPAY_MAGGIOLI_JPPA_JVM_MAX_RAM_PERCENTAGE` | no | `80` | `-XX:MaxRAMPercentage` della JVM |
 | `GOVPAY_MAGGIOLI_JPPA_JVM_INITIAL_RAM_PERCENTAGE` | no | - | `-XX:InitialRAMPercentage` della JVM |
