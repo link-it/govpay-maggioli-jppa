@@ -65,7 +65,6 @@ RUN chown -R govpay:0 /usr/local/bin/entrypoint.sh /usr/local/bin/init_maggioli_
 USER govpay
 
 ENV SPRING_BATCH_JOB_ENABLED=false \
-    GOVPAY_BATCH_ENABLED=true \
     GOVPAY_BATCH_THREAD_POOL_SIZE=5 \
     GOVPAY_BATCH_CHUNK_SIZE=100 \
     GOVPAY_BATCH_MAX_RETRIES=5 \
@@ -75,9 +74,7 @@ ENV SPRING_BATCH_JOB_ENABLED=false \
     SPRING_DATASOURCE_HIKARI_MAX_LIFETIME=600000 \
     SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE=2 \
     SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE=10 \
-    LOGGING_FILE_NAME=${govpay_maggioli_jppa_log}/govpay-maggioli-jppa.log \
-    LOGGING_DIRECTORYPATH=${govpay_maggioli_jppa_log} \
-    LOGGING_FILEPREFIX=govpay-maggioli-jppa
+    LOGGING_FILE_NAME=${govpay_maggioli_jppa_log}/govpay-maggioli-jppa.log
 
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

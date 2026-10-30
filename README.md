@@ -79,10 +79,6 @@ Le proprietà si impostano in `application.properties`, da riga di comando (`-D<
 | `govpay.batch.thread-pool-size` | `5` | Thread per l'elaborazione parallela: domini letti in parallelo nello step 2 e partizioni (un dominio ciascuna) elaborate in parallelo nello step 3 |
 | `govpay.batch.chunk-size` | `100` | Elementi per transazione negli step 2 (domini) e 3 (ricevute) |
 | `govpay.batch.max-retries` | `5` | Tentativi per una notifica che fallisce con errore di rete o HTTP diverso da 400, con attesa crescente da 2 a 10 secondi |
-| `govpay.batch.headers-chunk-size` | `1` | **Non letta dal batch**: lo step 2 usa `govpay.batch.chunk-size` |
-| `govpay.batch.metadata-chunk-size` | `100` | **Non letta dal batch** |
-| `govpay.batch.payments-chunk-size` | `50` | **Non letta dal batch**: lo step 3 usa `govpay.batch.chunk-size` |
-| `govpay.batch.skip-limit` | `10` | **Non letta dal batch**: lo step 3 non salta elementi, un errore dopo i tentativi fa fallire la partizione |
 | `scheduler.maggioliJppaNotificationJob.fixedDelayString` | `600000` | Intervallo tra la fine di un'esecuzione e l'avvio della successiva, in ms (10 minuti; 120 minuti nel container) |
 | `scheduler.initialDelayString` | `1` | Ritardo della prima esecuzione dopo l'avvio, in ms |
 
@@ -280,7 +276,7 @@ Variabili d'ambiente dell'immagine, oltre alle proprietà Spring Boot in forma d
 | `GOVPAY_MAGGIOLI_JPPA_JVM_MAX_DIRECT_MEMORY_SIZE` | no | - | `-XX:MaxDirectMemorySize` della JVM |
 | `JAVA_OPTS` | no | - | Opzioni aggiuntive della JVM |
 
-Il Dockerfile imposta anche `GOVPAY_BATCH_THREAD_POOL_SIZE=5`, `GOVPAY_BATCH_CHUNK_SIZE=100` e `GOVPAY_BATCH_MAX_RETRIES=5` (uguali ai default), i parametri Hikari indicati in [Database](#database) e `LOGGING_FILE_NAME`; `GOVPAY_BATCH_ENABLED`, `LOGGING_DIRECTORYPATH` e `LOGGING_FILEPREFIX` non sono lette da nessuno.
+Il Dockerfile imposta anche `GOVPAY_BATCH_THREAD_POOL_SIZE=5`, `GOVPAY_BATCH_CHUNK_SIZE=100` e `GOVPAY_BATCH_MAX_RETRIES=5` (uguali ai default), i parametri Hikari indicati in [Database](#database) e `LOGGING_FILE_NAME`.
 
 L'identificativo del nodo (`govpay.batch.cluster-id`) è impostato dall'entrypoint, con la variabile `GOVPAY_BATCH_CLUSTER_ID`, all'indirizzo IP del container o al suo hostname se l'IP non si ricava: un valore passato dall'esterno viene sovrascritto. Le altre variabili che compaiono negli script dell'immagine (es. `INTERVALLO_MINUTI`, `HSQLDB_SHA256`) sono interne e non vanno impostate. I messaggi dell'entrypoint e della JVM finiscono nei log del container (`docker logs`).
 
