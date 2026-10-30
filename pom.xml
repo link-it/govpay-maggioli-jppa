@@ -22,10 +22,6 @@
 
     <properties>
         <govpay-common.version>2.0.4-SNAPSHOT</govpay-common.version>
-        <openapi-generator.version>7.23.0</openapi-generator.version>
-
-        <!-- Code Coverage -->
-        <jacoco.version>0.8.13</jacoco.version>
 
         <!-- OWASP Dependency Check -->
         <owasp.falsePositives.dir>src/main/resources/owasp/falsePositives</owasp.falsePositives.dir>
@@ -301,7 +297,8 @@
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>${openapi-generator.version}</version>
+                <!-- versione gestita da govpay-bom -->
+                <version>${openapi.tool.codegen.version}</version>
                 <executions>
                     <execution>
                         <id>generate-maggioli-jppa-organization-client</id>
@@ -338,7 +335,6 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>${jacoco.version}</version>
                 <executions>
                     <execution>
                         <goals>
