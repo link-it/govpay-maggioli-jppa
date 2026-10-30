@@ -258,7 +258,8 @@ Variabili d'ambiente dell'immagine, oltre alle proprietà Spring Boot in forma d
 | `GOVPAY_MAGGIOLI_JPPA_MIN_POOL` | no | `2` | Connessioni minime inattive del pool |
 | `GOVPAY_MAGGIOLI_JPPA_MAX_POOL` | no | `10` | Connessioni massime del pool |
 | `GOVPAY_MAGGIOLI_JPPA_BATCH_USA_CRON` | no | - | `true`, `si`, `yes` o `1`: esecuzione singola con il profilo `cron`, senza server HTTP; il container termina a fine job e va pianificato dall'esterno (es. CronJob Kubernetes). Altrimenti scheduler interno |
-| `GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON` | no | `120` | Minuti tra un'esecuzione e l'altra con lo scheduler interno. L'entrypoint la converte sempre in `SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING`, sovrascrivendo un valore impostato direttamente |
+| `GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON` | no | `120` | Minuti tra un'esecuzione e l'altra con lo scheduler interno, convertiti in `SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING`. Un valore non numerico o zero blocca l'avvio |
+| `SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING` | no | - | Intervallo in ms; se impostata ha la precedenza su `GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON`, che viene ignorata con un avviso |
 | `SERVER_PORT` | no | `10001` | Porta HTTP con lo scheduler interno |
 | `MANAGEMENT_SERVER_PORT` | no | porta del servizio | Porta dedicata agli endpoint actuator |
 | `MANAGEMENT_ENDPOINTS` | no | `health,info,metrics,prometheus` | Endpoint actuator esposti |
@@ -281,7 +282,7 @@ Variabili d'ambiente dell'immagine, oltre alle proprietà Spring Boot in forma d
 
 Il Dockerfile imposta anche `GOVPAY_BATCH_THREAD_POOL_SIZE=5`, `GOVPAY_BATCH_CHUNK_SIZE=100` e `GOVPAY_BATCH_MAX_RETRIES=5` (uguali ai default), i parametri Hikari indicati in [Database](#database) e `LOGGING_FILE_NAME`; `GOVPAY_BATCH_ENABLED`, `LOGGING_DIRECTORYPATH` e `LOGGING_FILEPREFIX` non sono lette da nessuno.
 
-L'identificativo del nodo (`govpay.batch.cluster-id`) è impostato dall'entrypoint, con la variabile `GOVPAY_BATCH_CLUSTER_ID`, all'indirizzo IP del container o al suo hostname se l'IP non si ricava: un valore passato dall'esterno viene sovrascritto. Le altre variabili che compaiono negli script dell'immagine (es. `INTERVALLO_MINUTI`, `HSQLDB_SHA256`) sono interne e non vanno impostate. Il log di avvio dell'entrypoint è in `/tmp/entrypoint_debug.log` dentro il container.
+L'identificativo del nodo (`govpay.batch.cluster-id`) è impostato dall'entrypoint, con la variabile `GOVPAY_BATCH_CLUSTER_ID`, all'indirizzo IP del container o al suo hostname se l'IP non si ricava: un valore passato dall'esterno viene sovrascritto. Le altre variabili che compaiono negli script dell'immagine (es. `INTERVALLO_MINUTI`, `HSQLDB_SHA256`) sono interne e non vanno impostate. I messaggi dell'entrypoint e della JVM finiscono nei log del container (`docker logs`).
 
 Costruzione dell'immagine in locale con `docker/build_image.sh` (`-l <jar>` per un jar locale, dopo `mvn -Pjar,dist`), scansione delle vulnerabilità e pacchetti inclusi sono descritti in [docker/SCANSIONE.md](docker/SCANSIONE.md); i driver in [docker/jdbc-drivers/README.md](docker/jdbc-drivers/README.md).
 

@@ -8,10 +8,9 @@
 
 set -e
 
-# Debug di esecuzione (come govpay-docker)
-exec 6<> /tmp/entrypoint_debug.log
-exec 2>&6
-set -x
+# Niente tracing (set -x) e nessuna redirezione dello stderr su file: il
+# tracing scriverebbe la password del database in chiaro e lo stderr della JVM
+# finirebbe in un file dentro il container invece che nei log del container.
 
 # Funzioni di logging
 log_info() { echo -e "\033[0;32m[INFO]\033[0m $(date '+%Y-%m-%d %H:%M:%S') - $1"; }
@@ -117,8 +116,7 @@ GOVPAY_MAGGIOLI_JPPA_MAX_POOL=${GOVPAY_MAGGIOLI_JPPA_MAX_POOL:-10}
 
 if [ "${GOVPAY_MAGGIOLI_JPPA_POP_DB_SKIP:-TRUE}" != "TRUE" ] && [ -n "${GOVPAY_DB_TYPE}" ]; then
     log_info "Esecuzione script di inizializzazione database..."
-    /usr/local/bin/init_maggioli_jppa_db.sh
-    if [ $? -ne 0 ]; then
+    if ! /usr/local/bin/init_maggioli_jppa_db.sh; then
         log_error "Inizializzazione database fallita"
         exit 1
     fi
@@ -154,12 +152,25 @@ case "${GOVPAY_MAGGIOLI_JPPA_BATCH_USA_CRON,,}" in
         log_info "Modalita' deployment: SCHEDULER INTERNO (auto-schedulato)"
         SERVER_PORT=${SERVER_PORT:-10001}
 
-        # Conversione intervallo da minuti a millisecondi (default: 120 minuti = 2 ore)
-        INTERVALLO_MINUTI=${GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON:-120}
-        SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING=$((INTERVALLO_MINUTI * 60 * 1000))
+        # Intervallo di maggioliJppaNotificationJob (proprieta'
+        # scheduler.maggioliJppaNotificationJob.fixedDelayString, in ms). Un valore
+        # impostato direttamente con SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING
+        # ha la precedenza; altrimenti si converte GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON
+        # da minuti a millisecondi (default: 120 minuti = 2 ore).
+        if [ -n "${SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING}" ]; then
+            [ -n "${GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON}" ] && log_warn "GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON ignorata: e' impostata SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING."
+            log_info "Porta HTTP: ${SERVER_PORT}, Intervallo scheduler: ${SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING}ms (da SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING)"
+        else
+            INTERVALLO_MINUTI=${GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON:-120}
+            if ! [[ "${INTERVALLO_MINUTI}" =~ ^[0-9]+$ ]] || [ "$((10#${INTERVALLO_MINUTI}))" -eq 0 ]; then
+                log_error "GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON deve essere un numero intero di minuti maggiore di zero: ${INTERVALLO_MINUTI}"
+                exit 1
+            fi
+            SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING=$((10#${INTERVALLO_MINUTI} * 60 * 1000))
+            log_info "Porta HTTP: ${SERVER_PORT}, Intervallo scheduler: ${INTERVALLO_MINUTI} minuti (${SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING}ms)"
+        fi
 
         export SERVER_PORT SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING
-        log_info "Porta Actuator: ${SERVER_PORT}, Intervallo scheduler: ${INTERVALLO_MINUTI} minuti (${SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING}ms)"
         ;;
 esac
 
