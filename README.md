@@ -51,10 +51,11 @@ Le modifiche ai livelli di log fatte dalla console (riga `log_level` della tabel
 Requisiti: JDK 21 e Maven 3.8.1 o successivo.
 
 ```bash
-mvn clean install
+mvn clean install -P jar     # fat jar, per esecuzione standalone e container (profilo di default)
+mvn clean install -P war     # war, per il deploy su application server
 ```
 
-Il risultato è il fat jar `target/govpay-maggioli-jppa-batch.jar`. La build genera il client dell'API Maggioli dalla specifica OpenAPI, esegue i test e l'analisi OWASP Dependency-Check delle dipendenze; per escludere l'analisi OWASP, per esempio in sviluppo:
+Il profilo sceglie il packaging; il risultato è in `target/govpay-maggioli-jppa-batch.jar` o `target/govpay-maggioli-jppa-batch.war`. In entrambi i casi i driver JDBC non sono inclusi. La build genera il client dell'API Maggioli dalla specifica OpenAPI, esegue i test e l'analisi OWASP Dependency-Check delle dipendenze; per escludere l'analisi OWASP, per esempio in sviluppo:
 
 ```bash
 mvn clean install -Dowasp.phase=none
@@ -134,7 +135,8 @@ L'invio al GDE si configura con il connettore `govpay_gde_api` e con la sezione 
 
 | Proprietà | Default | Descrizione |
 |-----------|---------|-------------|
-| `spring.datasource.url` | - | URL JDBC del database di GovPay (obbligatoria) |
+| `spring.datasource.url` | - | URL JDBC del database di GovPay (obbligatoria con il jar) |
+| `spring.datasource.jndi-name` | - | Nome JNDI del datasource, per il deploy del war su application server (es. `java:comp/env/jdbc/govpay`); se impostata, le altre proprietà `spring.datasource.*` sono ignorate |
 | `spring.datasource.username` | - | Utente del database |
 | `spring.datasource.password` | - | Password del database |
 | `spring.datasource.driver-class-name` | dedotto dall'URL | Classe del driver JDBC |
@@ -147,7 +149,7 @@ L'invio al GDE si configura con il connettore `govpay_gde_api` e con la sezione 
 | `spring.datasource.hikari.idle-timeout` | `600000` (`10000` nel container) | Tempo dopo cui una connessione inattiva viene chiusa, in ms |
 | `spring.datasource.hikari.max-lifetime` | `1800000` (`600000` nel container) | Durata massima di una connessione, in ms |
 
-I driver JDBC non sono inclusi nel jar: vedi [Esecuzione](#esecuzione).
+I driver JDBC non sono inclusi né nel jar né nel war: vedi [Esecuzione](#esecuzione).
 
 ### Logging
 
@@ -223,6 +225,26 @@ java -Dloader.path=./jdbc-drivers \
      -jar target/govpay-maggioli-jppa-batch.jar --spring.profiles.active=cron
 ```
 
+### War su application server
+
+Il war si produce con `mvn clean install -P war` (`target/govpay-maggioli-jppa-batch.war`): non è allegato alle release né incluso nell'immagine Docker. Richiede un application server Jakarta EE 11 (Servlet 6.1), per esempio Tomcat 11.
+
+Il war usa il datasource dell'application server, indicato con `spring.datasource.jndi-name`; il driver JDBC va nelle librerie dell'application server. Le altre proprietà si passano come proprietà di sistema della JVM o variabili d'ambiente. Esempio per Tomcat, con il datasource definito in `conf/context.xml`:
+
+```xml
+<Resource name="jdbc/govpay" auth="Container" type="javax.sql.DataSource"
+          driverClassName="org.postgresql.Driver"
+          url="jdbc:postgresql://localhost:5432/govpay"
+          username="govpay" password="<password>" maxTotal="10"/>
+```
+
+```bash
+export CATALINA_OPTS="-Dspring.datasource.jndi-name=java:comp/env/jdbc/govpay"
+cp target/govpay-maggioli-jppa-batch.war $CATALINA_BASE/webapps/
+```
+
+Il batch gira con lo scheduler interno; API REST e actuator rispondono sotto il context path del war (es. `http://localhost:8080/govpay-maggioli-jppa-batch/actuator/health`).
+
 ## Esecuzione con Docker
 
 L'immagine è pubblicata su Docker Hub come [linkitaly/govpay-maggioli-jppa](https://hub.docker.com/r/linkitaly/govpay-maggioli-jppa) (release) e `linkitaly/govpay-maggioli-jppa-dev` (sviluppo, a ogni push su `main`). Con lo scheduler interno il servizio risponde sulla porta `10001`; i driver JDBC si montano in `/opt/jdbc-drivers`.
@@ -284,7 +306,7 @@ Costruzione dell'immagine in locale con `docker/build_image.sh` (`-l <jar>` per 
 
 ## Monitoraggio
 
-Con lo scheduler interno gli endpoint actuator rispondono di default sulla porta del servizio (`8080` con il jar, `10001` nel container):
+Con lo scheduler interno gli endpoint actuator rispondono di default sulla porta del servizio (`8080` con il jar, `10001` nel container; con il war, sotto il context path dell'applicazione):
 
 ```bash
 curl http://localhost:10001/actuator/health       # stato, compresa la connessione al database
