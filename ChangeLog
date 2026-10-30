@@ -1,3 +1,31 @@
+2026-10-30  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [Docker] entrypoint.sh senza set -x e senza redirezione dello stderr su
+	/tmp/entrypoint_debug.log, che scrivevano la password del database nel file.
+	SCHEDULER_MAGGIOLIJPPANOTIFICATIONJOB_FIXEDDELAYSTRING impostata
+	dall'esterno ha la precedenza su GOVPAY_MAGGIOLI_JPPA_BATCH_INTERVALLO_CRON;
+	un intervallo non numerico o zero blocca l'avvio.
+
+	* [Docker] init_maggioli_jppa_db.sh: tentativi di connessione al database
+	ripetuti anche con set -e, readiness check saltabile, tabelle Spring Batch e
+	JPPA_NOTIFICHE verificate e create separatamente (database condiviso con
+	altri batch), confronto dell'owner corretto su Oracle, errori di SqlTool
+	segnalati, file rc con la password cancellato all'uscita.
+
+	* [Docker] Tolte dal Dockerfile GOVPAY_BATCH_ENABLED, LOGGING_DIRECTORYPATH e
+	LOGGING_FILEPREFIX, che nessuno legge.
+
+	* [Config] Tolte da application.properties headers-chunk-size,
+	metadata-chunk-size, payments-chunk-size e skip-limit, mai lette; aggiunte
+	chunk-size e max-retries, che il batch usa.
+
+	* [Build] Il profilo war produce un war deployabile; tolti gli override di
+	openapi-generator e jacoco piu' vecchi di govpay-bom; la pipeline disattiva
+	l'aggiornamento OWASP con -Dowasp.plugin.autoUpdate=false.
+
+	* [Doc] README allineato al modello comune dei progetti GovPay; driver JDBC
+	alle versioni di govpay-bom.
+
 2026-09-28  Giuliano Pintori <pintori@link.it>
 
 	* [Logging] Transaction ID e Correlation ID nelle esecuzioni batch (BP-LOG-3).
