@@ -4,11 +4,12 @@
 # Script di Inizializzazione Database GovPay Maggioli JPPA
 # Questo script inizializza il database eseguendo:
 # 1. Liveness check (connessione TCP al database)
-# 2. Readiness check (verifica esistenza tabelle)
-# 3. Esecuzione script SQL se il database non e' inizializzato
+# 2. Readiness check (verifica esistenza delle tabelle Spring Batch e di
+#    JPPA_NOTIFICHE)
+# 3. Esecuzione degli script SQL delle sole tabelle che mancano
 #
 ##############################################################################
-set -x
+# Niente tracing (set -x): scriverebbe nei log la password del database.
 set -e
 
 # Configurazione con valori di default
@@ -72,8 +73,13 @@ if [ "${GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_SKIP^^}" == "FALSE" ]; then
     DB_ALIVE=1
 
     while [ ${DB_ALIVE} -ne 0 ] && [ ${RETRY} -lt ${GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_MAX_RETRY} ]; do
-        nc -w ${GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_CONNECT_TIMEOUT} -z "${DB_HOST}" "${DB_PORT}"
-        DB_ALIVE=$?
+        # Con set -e un nc fallito fuori da un if chiuderebbe lo script al primo
+        # tentativo, senza riprovare.
+        if nc -w ${GOVPAY_MAGGIOLI_JPPA_LIVE_DB_CHECK_CONNECT_TIMEOUT} -z "${DB_HOST}" "${DB_PORT}"; then
+            DB_ALIVE=0
+        else
+            DB_ALIVE=$?
+        fi
         RETRY=$((RETRY + 1))
 
         if [ ${DB_ALIVE} -ne 0 ]; then
@@ -133,6 +139,10 @@ log_info "URL JDBC: ${JDBC_URL}"
 ##############################################################################
 
 SQLTOOL_RC_FILE="/tmp/sqltool_maggioli_jppa.rc"
+# Il file contiene la password del database: leggibile solo dall'utente e
+# cancellato all'uscita dello script, insieme agli script SQL temporanei.
+umask 077
+trap 'rm -f "${SQLTOOL_RC_FILE}"; rm -rf /tmp/maggioli_jppa_sql' EXIT
 cat > ${SQLTOOL_RC_FILE} <<EOSQLTOOL
 urlid maggioli_jppa_db
 url ${JDBC_URL}
@@ -143,55 +153,68 @@ transiso TRANSACTION_READ_COMMITTED
 charset UTF-8
 EOSQLTOOL
 
+# Comando SqlTool, usato sia dal readiness check sia dalla creazione dello
+# schema: va definito qui perche' il readiness check si puo' saltare.
+INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVPAY_DS_JDBC_LIBS}/*:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
+
 ##############################################################################
-# READINESS CHECK (Esistenza Tabella)
+# READINESS CHECK (Esistenza Tabelle)
 ##############################################################################
 
-if [ "${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_SKIP^^}" == "FALSE" ]; then
-    log_info "Esecuzione readiness check (tabella: ${GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE})..."
-
-    # Costruzione query di verifica in base al tipo di database
+# Stampa il numero di tabelle con il nome indicato (0 o 1), ritentando se il
+# database non risponde; esce con 1 se non ottiene una risposta.
+conta_tabella() {
+    local TABELLA="${1,,}"
+    local CHECK_QUERY
     case "${GOVPAY_DB_TYPE}" in
         postgresql)
-            CHECK_QUERY="SELECT count(*) FROM information_schema.tables WHERE LOWER(table_name)='${GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE,,}' AND LOWER(table_catalog)='${GOVPAY_DB_NAME,,}';"
+            CHECK_QUERY="SELECT count(*) FROM information_schema.tables WHERE LOWER(table_name)='${TABELLA}' AND LOWER(table_catalog)='${GOVPAY_DB_NAME,,}';"
             ;;
         mysql|mariadb)
-            CHECK_QUERY="SELECT count(*) FROM information_schema.tables WHERE LOWER(table_name)='${GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE,,}' AND LOWER(table_schema)='${GOVPAY_DB_NAME,,}';"
+            CHECK_QUERY="SELECT count(*) FROM information_schema.tables WHERE LOWER(table_name)='${TABELLA}' AND LOWER(table_schema)='${GOVPAY_DB_NAME,,}';"
             ;;
         oracle)
-            CHECK_QUERY="SELECT count(*) FROM all_tables WHERE LOWER(table_name)='${GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE,,}' AND LOWER(owner)='${GOVPAY_DB_USER^^}';"
+            # Oracle registra i nomi in maiuscolo: owner va confrontato con UPPER
+            CHECK_QUERY="SELECT count(*) FROM all_tables WHERE LOWER(table_name)='${TABELLA}' AND UPPER(owner)='${GOVPAY_DB_USER^^}';"
             ;;
     esac
 
-    RETRY=0
-    TABLE_EXISTS=-1
-
-    INVOCAZIONE_CLIENT="-Dfile.encoding=UTF-8 -cp ${GOVPAY_DS_JDBC_LIBS}/*:/opt/hsqldb-${HSQLDB_FULLVERSION}/hsqldb/lib/sqltool.jar org.hsqldb.cmdline.SqlTool --rcFile=${SQLTOOL_RC_FILE} "
-
-    while [ ${TABLE_EXISTS} -lt 0 ] && [ ${RETRY} -lt ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY} ]; do
+    local RETRY=0
+    local TABLE_COUNT
+    while [ ${RETRY} -lt ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY} ]; do
         TABLE_COUNT=$(java ${INVOCAZIONE_CLIENT} \
             --sql="${CHECK_QUERY}" \
             maggioli_jppa_db 2>/dev/null | tail -1 | tr -d ' \n\r')
-
         if [[ "${TABLE_COUNT}" =~ ^[0-9]+$ ]]; then
-            TABLE_EXISTS=${TABLE_COUNT}
-        else
-            RETRY=$((RETRY + 1))
-            if [ ${RETRY} -lt ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY} ]; then
-                log_info "Readiness check fallito, tentativo ${RETRY}/${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY}..."
-                sleep ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_SLEEP_TIME}
-            fi
+            echo "${TABLE_COUNT}"
+            return 0
+        fi
+        RETRY=$((RETRY + 1))
+        if [ ${RETRY} -lt ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY} ]; then
+            log_info "Readiness check su ${TABELLA} fallito, tentativo ${RETRY}/${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY}..." >&2
+            sleep ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_SLEEP_TIME}
         fi
     done
+    log_error "FATALE: Readiness check su ${TABELLA} fallito dopo ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY} tentativi"
+    return 1
+}
 
-    if [ ${TABLE_EXISTS} -lt 0 ]; then
-        log_error "FATALE: Readiness check fallito dopo ${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_MAX_RETRY} tentativi"
-        exit 1
-    fi
+# Le tabelle Spring Batch possono gia' esistere perche' il database di GovPay
+# e' condiviso con gli altri batch: si controllano separatamente da
+# JPPA_NOTIFICHE e si crea solo cio' che manca.
+CREA_SCHEMA_BATCH=TRUE
+CREA_JPPA_NOTIFICHE=TRUE
+if [ "${GOVPAY_MAGGIOLI_JPPA_READY_DB_CHECK_SKIP^^}" == "FALSE" ]; then
+    log_info "Esecuzione readiness check (tabelle: ${GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE}, jppa_notifiche)..."
 
-    log_info "Risultato readiness check: ${TABLE_EXISTS} tabella/e trovata/e"
+    NUM_BATCH=$(conta_tabella "${GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE}") || exit 1
+    NUM_JPPA=$(conta_tabella jppa_notifiche) || exit 1
+    log_info "Risultato readiness check: ${GOVPAY_MAGGIOLI_JPPA_DB_CHECK_TABLE}=${NUM_BATCH}, jppa_notifiche=${NUM_JPPA}"
 
-    if [ ${TABLE_EXISTS} -gt 0 ]; then
+    [ "${NUM_BATCH}" -gt 0 ] && CREA_SCHEMA_BATCH=FALSE
+    [ "${NUM_JPPA}" -gt 0 ] && CREA_JPPA_NOTIFICHE=FALSE
+
+    if [ "${CREA_SCHEMA_BATCH}" == "FALSE" ] && [ "${CREA_JPPA_NOTIFICHE}" == "FALSE" ]; then
         log_info "Database gia' inizializzato, esecuzione SQL saltata"
         exit 0
     fi
@@ -261,17 +284,26 @@ esac
 # Esecuzione script SQL
 log_info "Esecuzione script SQL in corso..."
 
+SCRIPT_DA_ESEGUIRE=""
+if [ "${CREA_SCHEMA_BATCH}" == "TRUE" ]; then
+    log_info "Creazione delle tabelle Spring Batch"
+    SCRIPT_DA_ESEGUIRE="${SCRIPT_DA_ESEGUIRE}\\i /tmp/maggioli_jppa_sql/schema-${GOVPAY_DB_TYPE}.sql"$'\n'
+fi
+if [ "${CREA_JPPA_NOTIFICHE}" == "TRUE" ]; then
+    log_info "Creazione della tabella JPPA_NOTIFICHE"
+    SCRIPT_DA_ESEGUIRE="${SCRIPT_DA_ESEGUIRE}\\i /tmp/maggioli_jppa_sql/create-db.sql"$'\n'
+fi
+
+# Con set -e un errore di SqlTool chiuderebbe lo script senza il messaggio
+# d'errore: l'exit code si raccoglie con ||.
+SQL_EXIT_CODE=0
 java ${INVOCAZIONE_CLIENT} \
     --continueOnErr=false \
-    maggioli_jppa_db <<EOSQL
+    maggioli_jppa_db <<EOSQL || SQL_EXIT_CODE=$?
 SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;
 ${START_TRANSACTION}
-\i /tmp/maggioli_jppa_sql/schema-${GOVPAY_DB_TYPE}.sql
-\i /tmp/maggioli_jppa_sql/create-db.sql
-COMMIT;
+${SCRIPT_DA_ESEGUIRE}COMMIT;
 EOSQL
-
-SQL_EXIT_CODE=$?
 
 if [ ${SQL_EXIT_CODE} -eq 0 ]; then
     log_info "========================================"

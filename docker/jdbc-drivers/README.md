@@ -8,20 +8,22 @@ il `PropertiesLauncher` di Spring Boot carichi i driver a runtime.
 
 ## Driver supportati
 
-Scaricare il driver JDBC corrispondente al database utilizzato:
+Scaricare il driver JDBC corrispondente al database utilizzato (versioni gestite da [govpay-bom](https://github.com/link-it/govpay-bom)):
 
 ### PostgreSQL
 
 ```bash
-wget https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.9/postgresql-42.7.9.jar
+wget https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.14/postgresql-42.7.14.jar
 ```
 
 **License**: BSD-2-Clause
 
-### MySQL
+### MySQL e MariaDB
+
+L'immagine usa il driver MySQL (`com.mysql.cj.jdbc.Driver`) anche con `GOVPAY_DB_TYPE=mariadb`.
 
 ```bash
-wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.6.0/mysql-connector-j-9.6.0.jar
+wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/26.10.0/mysql-connector-j-26.10.0.jar
 ```
 
 **License**: GPL-2.0
@@ -29,7 +31,7 @@ wget https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/9.6.0/mysql-conn
 ### Oracle
 
 ```bash
-wget https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/23.26.1.0.0/ojdbc11-23.26.1.0.0.jar
+wget https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/23.26.3.0.0/ojdbc11-23.26.3.0.0.jar
 ```
 
 **License**: Oracle Free Use Terms and Conditions (FUTC)
@@ -37,8 +39,10 @@ wget https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/23.26.1.0.0
 
 ### SQL Server
 
+Solo per il jar fuori dal container: l'immagine non supporta `GOVPAY_DB_TYPE=sqlserver`.
+
 ```bash
-wget https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/12.8.2.jre11/mssql-jdbc-12.8.2.jre11.jar
+wget https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/13.6.1.jre11/mssql-jdbc-13.6.1.jre11.jar
 ```
 
 **License**: MIT
@@ -59,9 +63,9 @@ L'applicazione caricherà quello appropriato in base alla configurazione `GOVPAY
 Esempio:
 ```
 jdbc-drivers/
-├── postgresql-42.7.9.jar
-├── mysql-connector-j-9.6.0.jar
-└── ojdbc11-23.26.1.0.0.jar
+├── postgresql-42.7.14.jar
+├── mysql-connector-j-26.10.0.jar
+└── ojdbc11-23.26.3.0.0.jar
 ```
 
 ## Troubleshooting
