@@ -39,8 +39,6 @@ wget https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/23.26.3.0.0
 
 ### SQL Server
 
-Solo per il jar fuori dal container: l'immagine non supporta `GOVPAY_DB_TYPE=sqlserver`.
-
 ```bash
 wget https://repo1.maven.org/maven2/com/microsoft/sqlserver/mssql-jdbc/13.6.1.jre11/mssql-jdbc-13.6.1.jre11.jar
 ```
