@@ -87,6 +87,7 @@ Le proprietà si impostano in `application.properties`, da riga di comando (`-D<
 
 | Proprietà | Default | Descrizione |
 |-----------|---------|-------------|
+| `govpay.batch.enabled` | `true` | Con `false` lo scheduler interno non avvia il job (all'avvio il log lo segnala); `/run` e il profilo `cron` restano disponibili. Nel profilo `cron` non ha effetto |
 | `govpay.batch.cluster-id` | `GovPay-Maggioli-JPPA-Batch` | Identificativo del nodo, registrato nelle esecuzioni e negli eventi del GDE; nel container è l'indirizzo IP |
 | `govpay.batch.stale-threshold-minutes` | `120` | Minuti senza aggiornamenti dopo cui un'esecuzione in corso è considerata bloccata e può essere superata |
 | `govpay.batch.time-zone` | `Europe/Rome` | Fuso orario della JVM e dei calcoli sulle esecuzioni |
@@ -299,7 +300,7 @@ Variabili d'ambiente dell'immagine, oltre alle proprietà Spring Boot in forma d
 | `GOVPAY_MAGGIOLI_JPPA_JVM_MAX_DIRECT_MEMORY_SIZE` | no | - | `-XX:MaxDirectMemorySize` della JVM |
 | `JAVA_OPTS` | no | - | Opzioni aggiuntive della JVM |
 
-Il Dockerfile imposta anche `GOVPAY_BATCH_THREAD_POOL_SIZE=5`, `GOVPAY_BATCH_CHUNK_SIZE=100` e `GOVPAY_BATCH_MAX_RETRIES=5` (uguali ai default), i parametri Hikari indicati in [Database](#database) e `LOGGING_FILE_NAME`.
+Il Dockerfile imposta anche `GOVPAY_BATCH_ENABLED=true`, `GOVPAY_BATCH_THREAD_POOL_SIZE=5`, `GOVPAY_BATCH_CHUNK_SIZE=100` e `GOVPAY_BATCH_MAX_RETRIES=5` (uguali ai default), i parametri Hikari indicati in [Database](#database) e `LOGGING_FILE_NAME`.
 
 L'identificativo del nodo (`govpay.batch.cluster-id`) è impostato dall'entrypoint, con la variabile `GOVPAY_BATCH_CLUSTER_ID`, all'indirizzo IP del container o al suo hostname se l'IP non si ricava: un valore passato dall'esterno viene sovrascritto. Le altre variabili che compaiono negli script dell'immagine (es. `INTERVALLO_MINUTI`, `HSQLDB_SHA256`) sono interne e non vanno impostate. I messaggi dell'entrypoint e della JVM finiscono nei log del container (`docker logs`).
 
