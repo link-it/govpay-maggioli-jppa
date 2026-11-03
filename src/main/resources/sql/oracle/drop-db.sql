@@ -1,1 +1,1 @@
-DROP TABLE JPPA_NOTIFICHE;
+DROP TABLE jppa_notifiche;

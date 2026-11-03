@@ -1,2 +1,2 @@
-IF EXISTS (SELECT * FROM sys.tables WHERE name = 'JPPA_NOTIFICHE')
-    DROP TABLE JPPA_NOTIFICHE;
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'jppa_notifiche')
+    DROP TABLE jppa_notifiche;

@@ -13,7 +13,7 @@ import lombok.ToString;
  * Entity representing a Singolo Versamento
  */
 @Entity
-@Table(name = "SINGOLI_VERSAMENTI")
+@Table(name = "singoli_versamenti")
 @Getter
 @Setter
 @Builder
