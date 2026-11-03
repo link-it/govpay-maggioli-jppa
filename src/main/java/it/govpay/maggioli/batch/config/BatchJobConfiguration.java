@@ -21,7 +21,6 @@ import java.util.Map;
 import org.springframework.batch.core.job.Job;
 import org.springframework.batch.core.step.Step;
 import org.springframework.batch.core.job.builder.JobBuilder;
-import org.springframework.batch.core.job.parameters.RunIdIncrementer;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.context.annotation.Bean;
@@ -91,7 +90,6 @@ public class BatchJobConfiguration {
         BatchExecutionRecapListener batchExecutionRecapListener
     ) {
         return new JobBuilder("maggioliJppaNotificationJob", jobRepository)
-            .incrementer(new RunIdIncrementer())
             .listener(batchExecutionRecapListener)
             .start(cleanupStep)
             .next(maggioliHeadersAcquisitionStep)
