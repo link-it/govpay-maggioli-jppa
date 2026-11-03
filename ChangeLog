@@ -1,5 +1,10 @@
 2026-11-03  Giuliano Pintori <giuliano.pintori@link.it>
 
+	* [Config] Aggiunta govpay.batch.enabled (default true, nel container
+	GOVPAY_BATCH_ENABLED): con false lo scheduler interno non avvia il job,
+	mentre /run e il profilo cron restano disponibili
+	(link-it/govpay-common#44, che legge la proprieta').
+
 	* [Batch] Tolto il RunIdIncrementer dal job. Da Spring Batch 6
 	JobOperator.start() ignora i parametri passati a un job con incrementer e
 	avvia l'istanza successiva con i soli parametri dell'incrementer: si
