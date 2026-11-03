@@ -55,6 +55,7 @@ if [ -z "${DB_PORT}" ] || [ "${DB_PORT}" == "${DB_HOST}" ]; then
         postgresql) DB_PORT=5432 ;;
         mysql|mariadb) DB_PORT=3306 ;;
         oracle) DB_PORT=1521 ;;
+        sqlserver) DB_PORT=1433 ;;
         *) DB_PORT=5432 ;;
     esac
 fi
@@ -117,15 +118,21 @@ case "${GOVPAY_DB_TYPE}" in
         fi
         START_TRANSACTION=""
         ;;
+    sqlserver)
+        JDBC_URL="jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=${GOVPAY_DB_NAME}"
+        START_TRANSACTION=""
+        ;;
     *)
         log_error "Tipo database non supportato: ${GOVPAY_DB_TYPE}"
         exit 1
         ;;
 esac
 
-# Aggiunta parametri di connessione se presenti
+# Aggiunta parametri di connessione se presenti (SQL Server li separa con ';')
 if [ -n "${GOVPAY_DS_CONN_PARAM}" ]; then
-    if [[ "${JDBC_URL}" == *"?"* ]]; then
+    if [ "${GOVPAY_DB_TYPE}" == "sqlserver" ]; then
+        JDBC_URL="${JDBC_URL};${GOVPAY_DS_CONN_PARAM}"
+    elif [[ "${JDBC_URL}" == *"?"* ]]; then
         JDBC_URL="${JDBC_URL}&${GOVPAY_DS_CONN_PARAM}"
     else
         JDBC_URL="${JDBC_URL}?${GOVPAY_DS_CONN_PARAM}"
@@ -172,6 +179,9 @@ conta_tabella() {
             ;;
         mysql|mariadb)
             CHECK_QUERY="SELECT count(*) FROM information_schema.tables WHERE LOWER(table_name)='${TABELLA}' AND LOWER(table_schema)='${GOVPAY_DB_NAME,,}';"
+            ;;
+        sqlserver)
+            CHECK_QUERY="SELECT count(*) FROM information_schema.tables WHERE LOWER(table_name)='${TABELLA}' AND LOWER(table_catalog)='${GOVPAY_DB_NAME,,}';"
             ;;
         oracle)
             # Oracle registra i nomi in maiuscolo: owner va confrontato con UPPER
@@ -262,7 +272,14 @@ done
 # Copia script in posizione temporanea
 mkdir -p /tmp/maggioli_jppa_sql
 cp "/opt/sql/${SQL_DIR}"/*.sql /tmp/maggioli_jppa_sql/
-cp "${BATCH_SCHEMA}" /tmp/maggioli_jppa_sql/
+if [ "${GOVPAY_DB_TYPE}" == "sqlserver" ]; then
+    # Su SQL Server le tabelle Spring Batch si creano in minuscolo come quelle di
+    # GovPay: la validazione di Hibernate confronta i nomi rispettando maiuscole e
+    # minuscole. Lo script di Spring Batch non contiene stringhe, si puo' convertire tutto.
+    tr 'A-Z' 'a-z' < "${BATCH_SCHEMA}" > "/tmp/maggioli_jppa_sql/$(basename "${BATCH_SCHEMA}")"
+else
+    cp "${BATCH_SCHEMA}" "/tmp/maggioli_jppa_sql/$(basename "${BATCH_SCHEMA}")"
+fi
 log_info "Script SQL copiati in /tmp/maggioli_jppa_sql/ (schema batch: $(basename "${BATCH_SCHEMA}"))"
 
 # Applica trasformazioni specifiche per vendor
@@ -290,7 +307,7 @@ if [ "${CREA_SCHEMA_BATCH}" == "TRUE" ]; then
     SCRIPT_DA_ESEGUIRE="${SCRIPT_DA_ESEGUIRE}\\i /tmp/maggioli_jppa_sql/schema-${GOVPAY_DB_TYPE}.sql"$'\n'
 fi
 if [ "${CREA_JPPA_NOTIFICHE}" == "TRUE" ]; then
-    log_info "Creazione della tabella JPPA_NOTIFICHE"
+    log_info "Creazione della tabella jppa_notifiche"
     SCRIPT_DA_ESEGUIRE="${SCRIPT_DA_ESEGUIRE}\\i /tmp/maggioli_jppa_sql/create-db.sql"$'\n'
 fi
 

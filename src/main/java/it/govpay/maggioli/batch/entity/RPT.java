@@ -15,7 +15,7 @@ import lombok.ToString;
  * Entity representing a Receipt
  */
 @Entity
-@Table(name = "RPT")
+@Table(name = "rpt")
 @Getter
 @Setter
 @Builder

@@ -143,6 +143,7 @@ L'invio al GDE si configura con il connettore `govpay_gde_api` e con la sezione 
 | `spring.jpa.database-platform` | dedotto dal driver | Dialetto Hibernate |
 | `spring.jpa.properties.hibernate.dialect` | dedotto dal driver | Dialetto Hibernate |
 | `spring.jpa.hibernate.ddl-auto` | `validate` | Gestione dello schema: all'avvio Hibernate verifica che le tabelle mappate esistano con le colonne attese, senza modificarle |
+| `spring.jpa.properties.hibernate.type.preferred_instant_jdbc_type` | `TIMESTAMP` | Le date (`data_ultima_rt`, `data_msg_ricevuta`) sono colonne senza fuso orario: si leggono e scrivono in ora locale, come fa il core. Non va cambiata |
 | `spring.datasource.hikari.minimum-idle` | `10` (`2` nel container) | Connessioni minime inattive del pool |
 | `spring.datasource.hikari.maximum-pool-size` | `10` | Connessioni massime del pool |
 | `spring.datasource.hikari.connection-timeout` | `30000` (`20000` nel container) | Attesa massima di una connessione, in ms |
@@ -264,12 +265,12 @@ Variabili d'ambiente dell'immagine, oltre alle proprietà Spring Boot in forma d
 
 | Variabile | Obbligatoria | Default | Descrizione |
 |-----------|--------------|---------|-------------|
-| `GOVPAY_DB_TYPE` | sì | - | Tipo di database: `postgresql`, `mysql`, `mariadb`, `oracle` (SQL Server non è supportato dall'immagine) |
+| `GOVPAY_DB_TYPE` | sì | - | Tipo di database: `postgresql`, `mysql`, `mariadb`, `oracle`, `sqlserver` |
 | `GOVPAY_DB_SERVER` | sì | - | Server del database, `host` o `host:porta` (porta di default del database se omessa) |
 | `GOVPAY_DB_NAME` | sì | - | Nome del database (per Oracle, service name o SID) |
 | `GOVPAY_DB_USER` | sì | - | Utente del database |
 | `GOVPAY_DB_PASSWORD` | sì | - | Password del database (se manca l'avvio prosegue con un avviso) |
-| `GOVPAY_DS_CONN_PARAM` | no | - | Parametri aggiunti all'URL JDBC (es. `zeroDateTimeBehavior=convertToNull` per MySQL) |
+| `GOVPAY_DS_CONN_PARAM` | no | - | Parametri aggiunti all'URL JDBC (es. `zeroDateTimeBehavior=convertToNull` per MySQL). Con SQL Server sono separati da `;` (es. `encrypt=true;trustServerCertificate=true` per un certificato self-signed) |
 | `GOVPAY_DS_JDBC_LIBS` | no | `/opt/jdbc-drivers` | Directory dei driver JDBC |
 | `GOVPAY_ORACLE_JDBC_URL_TYPE` | no | `servicename` | Formato dell'URL Oracle: `servicename` o `sid` |
 | `ORACLE_TNS_ADMIN` | no | - | Directory dei file TNS di Oracle |

@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
  * Entity representing a info to be notify JPPA
  */
 @Entity
-@Table(name = "JPPA_NOTIFICHE")
+@Table(name = "jppa_notifiche")
 @Data
 @Builder
 @NoArgsConstructor

@@ -1,3 +1,26 @@
+2026-11-02  Giuliano Pintori <giuliano.pintori@link.it>
+
+	* [Docker] Supporto a SQL Server nell'immagine (GOVPAY_DB_TYPE=sqlserver).
+	Entrypoint e script di inizializzazione costruiscono l'URL jdbc:sqlserver
+	(porta 1433 di default, parametri di GOVPAY_DS_CONN_PARAM separati da ';')
+	e l'inizializzazione crea le tabelle mancanti. Il driver mssql-jdbc si monta
+	in /opt/jdbc-drivers come gli altri. Stessa modifica di govpay-aca-batch.
+	Su SQL Server le tabelle Spring Batch si creano in minuscolo, come quelle
+	di GovPay: la validazione di Hibernate confronta i nomi rispettando
+	maiuscole e minuscole e tutti i batch condividono le stesse tabelle.
+
+	* [Database] Tabella jppa_notifiche e nomi delle entita' in minuscolo, come
+	le tabelle di GovPay. Con MySQL su un sistema che distingue maiuscole e
+	minuscole (lower_case_table_names=0) un'installazione esistente con la
+	tabella JPPA_NOTIFICHE va rinominata in jppa_notifiche.
+
+	* [Database] Date senza fuso orario lette e scritte in ora locale.
+	data_ultima_rt e data_msg_ricevuta sono TIMESTAMP senza fuso, scritti dal
+	core in ora locale, ma il batch li trattava come UTC (hibernate.type.
+	preferred_instant_jdbc_type=TIMESTAMP). All'aggiornamento il valore di
+	data_ultima_rt gia' salvato viene letto 1-2 ore indietro: al primo giro
+	possono essere rinviate a Maggioli le ricevute di quella finestra.
+
 2026-10-30  Giuliano Pintori <giuliano.pintori@link.it>
 
 	* [Docker] entrypoint.sh senza set -x e senza redirezione dello stderr su

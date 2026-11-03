@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
  * Entity representing a JPPA configuration
  */
 @Entity
-@Table(name = "JPPA_CONFIG")
+@Table(name = "jppa_config")
 @Data
 @Builder
 @NoArgsConstructor
